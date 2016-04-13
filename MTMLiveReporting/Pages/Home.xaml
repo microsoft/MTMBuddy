@@ -1,0 +1,105 @@
+﻿<UserControl x:Class="MTMLiveReporting.Pages.Home"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:wf="clr-namespace:System.Windows.Forms;assembly=System.Windows.Forms"
+             mc:Ignorable="d">
+    <Grid Style="{StaticResource ContentRoot}">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1" />
+            <ColumnDefinition Width="230*" />
+            <ColumnDefinition Width="500*" />
+        </Grid.ColumnDefinitions>
+        <ScrollViewer Grid.ColumnSpan="2" Margin="0,0,0.299,-0.612" />
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="25" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <TextBox Grid.Row="0" x:Name="txtPlanId" Margin="0,0,80,0" Text="Enter Plan Id"
+                     HorizontalAlignment="Stretch" VerticalAlignment="Center"
+                     ToolTip="Please enter the plan id you want to use and click on GO Button" />
+            <TextBox x:Name="planName" HorizontalAlignment="Stretch" VerticalAlignment="Top"
+                     Text="Click Go to get Plan Name" Grid.Column="0" RenderTransformOrigin="0.5,0.5" Margin="0,3,10,0"
+                     Grid.Row="1" />
+
+            <Button Grid.Row="0" x:Name="btnGenerateTree" HorizontalAlignment="Right" VerticalAlignment="Stretch"
+                    Content="Go" Click="btnGenerateTree_Click" Margin="0,0,10,0" Width="60" />
+            <TreeView x:Name="tvMTM" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                      Margin="0,25,0,15" />
+        </Grid>
+
+
+        <Grid x:Name="ResultGrid" Grid.Column="2" Margin=" 0,0,5,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="20*" />
+                <ColumnDefinition Width="461*" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="38" />
+                <RowDefinition Height="40" />
+                <RowDefinition Height="40" />
+                <RowDefinition Height="40" />
+                <RowDefinition />
+                <RowDefinition Height="40" />
+            </Grid.RowDefinitions>
+            <TextBlock Grid.Row="1" x:Name="lblReportSelection" Margin="10,10,0,12" HorizontalAlignment="Left"
+                       VerticalAlignment="Center" Text="Select report" Width="100" Grid.ColumnSpan="2" />
+            <ComboBox Grid.Row="1" x:Name="cmbReportSelection" HorizontalAlignment="Stretch" VerticalAlignment="Center"
+                      SelectedIndex="0" Margin="100,7,246,9" Grid.Column="1" />
+            <Button Grid.Row="1" x:Name="btnGenerateSummaryReport" Margin="0,5,120,7" HorizontalAlignment="Right"
+                    VerticalAlignment="Center" Content="Generate Report" Click="btnGenerateSummaryReport_Click"
+                    Grid.Column="1" />
+            <Button Grid.Row="1" x:Name="btnRefreshData" Margin="0,5,10,7" HorizontalAlignment="Right"
+                    VerticalAlignment="Center" Content="Refresh Data" Click="btnRefreshData_Click" Grid.Column="1" />
+            <TextBlock Grid.Row="2" x:Name="lblModuleFilter" Margin="10,12,0,12" HorizontalAlignment="Left"
+                       VerticalAlignment="Center" Text="Module Filter" Width="100" Grid.ColumnSpan="2" />
+            <CheckBox Grid.Row="2" Content="Include" x:Name="chkModuleInclusion" Margin="100,12,0,12"
+                      HorizontalAlignment="Left" VerticalAlignment="Center" Width="60" IsChecked="True" Grid.Column="1" />
+            <TextBox Grid.Row="2" x:Name="txtmodulefilter" Margin="170,9,30,9" HorizontalAlignment="Stretch"
+                     VerticalAlignment="Center" Grid.Column="1" />
+
+            <Button Grid.Row="2" MinWidth="5" Margin="0,1,1,1" Padding="1,1,1,1" BorderThickness="0" Opacity="0.8"
+                    MouseEnter="btnHelp_OnMouseEnter" MouseLeave="btnHelp_OnMouseLeave" HorizontalAlignment="Right"
+                    ToolTip="Provide comma separated module names to filter.If you enter a parent node name, first level children get included/excluded."
+                    Width="24" Grid.Column="1">
+                <Button.Background>
+                    <ImageBrush ImageSource="../help.png" Stretch="Uniform" />
+                </Button.Background>
+            </Button>
+            <TextBlock Grid.Row="3" x:Name="lblTesterFilter" Margin="10,12,0,12" HorizontalAlignment="Left"
+                       VerticalAlignment="Center" Text="Tester Filter" Width="100" Grid.ColumnSpan="2" />
+            <CheckBox Grid.Row="3" Content="Include" x:Name="chkTesterInclusion" Margin="100,12,0,12"
+                      HorizontalAlignment="Left" VerticalAlignment="Center" Width="60" IsChecked="True" Grid.Column="1" />
+            <TextBox Grid.Row="3" x:Name="txttesterfilter" Margin="170,9,30,9" HorizontalAlignment="Stretch"
+                     VerticalAlignment="Center" Grid.Column="1" />
+            <Button Grid.Row="3" MinWidth="5" Margin="0,1,1,1" Padding="1,1,1,1" BorderThickness="0" Opacity="0.8"
+                    MouseEnter="btnHelp_OnMouseEnter" MouseLeave="btnHelp_OnMouseLeave" HorizontalAlignment="Right"
+                    ToolTip="Provide comma separated Tester names (exactly as in MTM) to filter" Width="24"
+                    Grid.Column="1">
+                <Button.Background>
+                    <ImageBrush ImageSource="../help.png" Stretch="Uniform" />
+                </Button.Background>
+            </Button>
+            <TextBlock Grid.Row="4" x:Name="lblAutomation" Margin="10,12,0,12" HorizontalAlignment="Left"
+                       VerticalAlignment="Center" Text="Automation Status" Width="120" Grid.ColumnSpan="2" />
+            <ComboBox Grid.Row="4" x:Name="cmbAutomationStaus" Margin="170,9,30,9" HorizontalAlignment="Stretch"
+                      VerticalAlignment="Center" SelectedIndex="0" Grid.Column="1" />
+            <Button Grid.Row="6" x:Name="buttonIssueList" Margin="168,7,179,7" HorizontalAlignment="Center"
+                    VerticalAlignment="Center" Content="Show Issue List" Click="buttonIssueList_Click"
+                    Visibility="Hidden" Grid.Column="1" />
+
+            <Button Grid.Row="6" x:Name="buttonExportToExcel" Margin="0,7" HorizontalAlignment="Right"
+                    VerticalAlignment="Center" Content="Export to Excel" Click="buttonExportToExcel_Click"
+                    Grid.Column="1" />
+            
+            <DataGrid Grid.Row="5" x:Name="ResultDataGrid" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                      BorderThickness="1" GridLinesVisibility="All" ClipboardCopyMode="IncludeHeader"
+                      HeadersVisibility="Column" IsTextSearchEnabled="True" Grid.ColumnSpan="2" />
+        </Grid>
+
+
+    </Grid>
+</UserControl>
