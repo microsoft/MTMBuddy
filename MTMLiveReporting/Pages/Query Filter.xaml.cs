@@ -60,6 +60,7 @@ namespace MTMLiveReporting.Pages
                 Outcomes.Add("Blocked");
                 Outcomes.Add("Failed");
                 Outcomes.Add("Passed");
+                Outcomes.Add("In progress");
                 cmbOutcome.ItemsSource = Outcomes;
 
                 var validOutcomes = Outcomes;
@@ -73,6 +74,7 @@ namespace MTMLiveReporting.Pages
                 MTMInteraction.getwpfsuitetree(int.Parse(ConfigurationManager.AppSettings["TestPlanID"]), tvMTM, true);
                 var tester = new List<string>();
                 tester = MTMInteraction.getTester();
+               
                 tester.Sort();
                 testerName.ItemsSource = tester;
 

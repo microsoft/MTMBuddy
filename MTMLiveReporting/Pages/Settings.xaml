@@ -12,7 +12,7 @@
                 <mui:Link DisplayName="configuration" Source="/Content/SettingsVSTF.xaml" />
                 <mui:Link DisplayName="appearance" Source="/Content/SettingsAppearance.xaml" />
                 <!--<mui:Link DisplayName="Privacy" Source="/Content/Privacy.xaml" />-->
-                <mui:Link DisplayName="about" Source="/Content/About.xaml" />
+                
                 <!--<mui:Link DisplayName="Advanced Settings" Source="/Content/Advanced.xaml" />-->
                 <mui:Link DisplayName="Diagnostics" Source="/Content/Diagnostic.xaml" />
             </mui:ModernTab.Links>

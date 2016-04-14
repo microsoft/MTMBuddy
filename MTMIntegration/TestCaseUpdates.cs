@@ -84,9 +84,23 @@ namespace MTMIntegration
                 TestResult = PlanRun.QueryResults()[PlanRun.QueryResults().Count - 1];
                 TestResult.DateStarted = DateTime.Now;
                 //Console.WriteLine("Test Result count : {0}", PlanRun.QueryResults().Count);
-                TestResult.State = TestResultState.Completed;
-                //TestResult.Outcome = TestOutcome.Passed;
-                TestResult.Outcome = (TestOutcome) Enum.Parse(typeof (TestOutcome), result);
+                if (result.Equals("In progress", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    TestResult.State = TestResultState.InProgress;
+                    TestResult.Outcome = TestOutcome.None;
+                }
+                else if(result.Equals("Active",StringComparison.InvariantCultureIgnoreCase ))
+                {
+                    TestResult.State = TestResultState.Completed;
+                    TestResult.Outcome = TestOutcome.None;
+                }
+                else
+                {
+                    TestResult.State = TestResultState.Completed;
+                    //TestResult.Outcome = TestOutcome.Passed;
+                    
+                    TestResult.Outcome = (TestOutcome)Enum.Parse(typeof(TestOutcome), result);
+                }
 
                 TestResult.ComputerName = Dns.GetHostName();
                 TestResult.RunBy = PlanRun.Owner;
