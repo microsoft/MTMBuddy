@@ -189,7 +189,7 @@ namespace MTMIntegration
 
                 TeamProject.TfsIdentityStore.Refresh();
 
-                foreach (var i in TeamProject.TfsIdentityStore.AllUserIdentityNames)
+                foreach (var i in TeamProject.TfsIdentityStore.AllUserIdentities)
                 {
                     tester.Add(i.DisplayName);
                 }
@@ -436,7 +436,7 @@ namespace MTMIntegration
         {
             stp.Restart();
             var type = getType(suiteid);
-
+            
             ITestPointCollection pointCollection = null;
             if (suiteid != -1)
             {
@@ -449,9 +449,10 @@ namespace MTMIntegration
                 }
                 else
                 {
+                    
                     pointCollection =
-                        TestPlan.QueryTestPoints(TestSuiteQuery.Replace("[#testsuiteid#]", suiteid.ToString()));
-                    // like "SELECT * from TestPoint where TestCaseId='185716'
+                        TestPlan.QueryTestPoints(TestSuiteQuery.Replace("[#testsuiteid#]", suiteid.ToString()+"'"));
+                    
                 }
             }
             else
@@ -474,8 +475,12 @@ namespace MTMIntegration
                 var outcome = string.Empty;
                 outcome = tpoint.MostRecentResultOutcome.ToString();
 
+                if (tpoint.MostRecentResult.State.Equals(TestResultState.InProgress))
 
-                if (outcome.Equals("Blocked", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    outcome = "In progress";
+                }
+                    if (outcome.Equals("Blocked", StringComparison.InvariantCultureIgnoreCase))
                 {
                     if (
                         !tpoint.MostRecentResult.Outcome.ToString()
@@ -533,15 +538,10 @@ namespace MTMIntegration
                 try
                 {
                     stp.Restart();
-                    if (tpoint.AssignedTo.DisplayName != null)
-                    {
+                   
                         res.Tester = tpoint.AssignedTo.DisplayName;
-                    }
-                    else
-                    {
-                        tpoint.AssignedTo =
-                            TeamProject.TfsIdentityStore.FindByDisplayName("Pranav Purushottam Kondejkar");
-                    }
+                    
+                   
                     stp.Stop();
                     TesterTime = TesterTime + (float) stp.ElapsedMilliseconds/1000;
                 }
@@ -549,8 +549,7 @@ namespace MTMIntegration
 
                 catch (Exception)
                 {
-                    tpoint.AssignedTo = TeamProject.TfsIdentityStore.FindByDisplayName("Pranav Purushottam Kondejkar");
-                    tpoint.Save();
+                   
                     res.Tester = "Nobody";
                 }
 
@@ -1184,7 +1183,8 @@ namespace MTMIntegration
                 if (selectedTcID.Contains(tpoint.TestCaseId))
                 {
                     tpoint.AssignedTo = TeamProject.TfsIdentityStore.FindByDisplayName(name);
-
+                 
+                    
                     tpoint.Save();
                 }
             }
