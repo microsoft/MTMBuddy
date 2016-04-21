@@ -1,4 +1,8 @@
-﻿using System;
+﻿//------------------------------------------------------------------------------------------------------- 
+// Copyright (C) Microsoft. All rights reserved. 
+// Licensed under the MIT license. See LICENSE.txt file in the project root for full license information. 
+//------------------------------------------------------------------------------------------------------- 
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -19,38 +23,81 @@ namespace MTMIntegration
         private static Uri TempURI;
 
         private static List<string> tester = new List<string>();
-        public static TfsTeamProjectCollection TfsProjColl;
+        private static TfsTeamProjectCollection TfsProjColl;
 
-        public static ITestManagementService Tms;
+        private static ITestManagementService Tms;
 
-        public static ITestManagementTeamProject TeamProject;
+        private static ITestManagementTeamProject TeamProject;
 
-        public static int TestPlanID;
+        /// <summary>
+        /// The planid of the plan currently selected.
+        /// </summary>
+        private static int testplanid;
 
+        public static int TestPlanID
+        {
+            get { return testplanid; }
+        }
+
+
+        /// <summary>
+        /// Currently selected TestPlan
+        /// </summary>
         public static ITestPlan TestPlan;
 
         private static readonly Stopwatch stp = new Stopwatch();
 
-
+        /// <summary>
+        /// Disctionary of suiteids and suites in the current selected plan
+        /// </summary>
         public static readonly Dictionary<int, string> suitedictionary = new Dictionary<int, string>();
 
+        /// <summary>
+        /// Sum of time taken to retrieve all outcomes in the query
+        /// </summary>
         public static float OutcomeTime;
+        /// <summary>
+        /// Sum of time taken to retrieve all Tester names in the query
+        /// </summary>
         public static float TesterTime;
+        /// <summary>
+        /// Sum of time taken to retrieve all priority information in the query
+        /// </summary>
         public static float PriorityTime;
+        /// <summary>
+        /// Sum of time taken to retrieve all Automation status information in the query
+        /// </summary>
         public static float AutomationTime;
+        /// <summary>
+        /// Sum of time taken to retrieve all initializations in the query
+        /// </summary>
         public static float Initialize;
+        /// <summary>
+        /// Sum of time taken to retrieve all testcase id information in the query
+        /// </summary>
         public static float tcidtime;
+        /// <summary>
+        /// Sum of time taken to retrieve all the titles in the query
+        /// </summary>
         public static float Titletime;
+        /// <summary>
+        /// Sum of time taken to retrieve names of Automation Methods in the query
+        /// </summary>
         public static float AutomationMethodTime;
-        public static float AutomationMethodTime1;
+        /// <summary>
+        /// Sum of time taken to add entries to play list
+        /// </summary>
+        public static float AutomationPlaylistAddition;
+
         public static float AutomationTestNameFetchTime;
 
-        //private static ITestRun PlanRun;
-
-
-      
+           
 
         private static string ProjectName;
+
+        /// <summary>
+        /// Work Item store of the currect TFS Project.
+        /// </summary>
         public static WorkItemStore wstore;
 
      
@@ -58,10 +105,13 @@ namespace MTMIntegration
         private static readonly string TestSuiteQuery = "Select * from TestPoint where SuiteId in  ('[#testsuiteid#])";
 
         /// <summary>
-        ///     planName
+        ///     Name of the currently selected Test Plan
         /// </summary>
-        public static string planName { get; set; }
+        public static string PlanName { get; set; }
 
+        /// <summary>
+        /// Clear the performance counters used to track the time taken for each field
+        /// </summary>
         public static void clearperfcounters()
         {
             OutcomeTime = 0;
@@ -72,95 +122,11 @@ namespace MTMIntegration
             tcidtime = 0;
             Titletime = 0;
             AutomationMethodTime = 0;
-            AutomationMethodTime1 = 0;
-            AutomationTestNameFetchTime = 0;
+            AutomationPlaylistAddition = 0;
+       
         }
 
-        /// <summary>
-        /// </summary>
-        /// <param name="VSTFconnectionstring"></param>
-        /// <param name="VSTFProject"></param>
-        /// <param name="PlanId"></param>
-        /// <param name="flags"></param>
-        /// <returns></returns>
-        public static List<PlanDetails> GetAllCasesfromPlan(string VSTFconnectionstring, string VSTFProject, int PlanId,
-            Dictionary<string, bool> flags)
-        {
-            var vstfconnection = new Uri(VSTFconnectionstring);
-            initializeVSTFUpdate(vstfconnection, VSTFProject, PlanId, "");
-            var allcases = new List<PlanDetails>();
-
-            //Step 1: Get Application-Iteration-Suiteid mapping
-
-            string[] iterations = {"DUT", "DIT", "SIT1", "SIT2", "UAT"};
-
-            Parallel.ForEach(iterations, iteration =>
-            {
-                //Get Application-suiteid mapping
-                var Applist = getsuitelist(PlanId, iteration, getSuite(PlanId));
-
-                Parallel.ForEach(Applist.Keys, App =>
-                {
-                    var suiteid = Applist[App];
-                    //get all subsuites
-                    var type = getType(suiteid);
-
-                    ITestPointCollection pointCollection = null;
-                    if (type)
-                    {
-                        var suitelist = getsubsuites(suiteid);
-                        suitelist = suitelist.Substring(0, suitelist.Length - 3);
-                        pointCollection = TestPlan.QueryTestPoints(TestSuiteQuery.Replace("[#testsuiteid#]", suitelist));
-                        // like "SELECT * from TestPoint where TestCaseId='185716'
-                    }
-                    else
-                    {
-                        pointCollection =
-                            TestPlan.QueryTestPoints(TestSuiteQuery.Replace("[#testsuiteid#]", suiteid.ToString()));
-                        // like "SELECT * from TestPoint where TestCaseId='185716'
-                    }
-
-                    var resultitem = new PlanDetails();
-
-
-                    foreach (var tpoint in pointCollection)
-                    {
-                        resultitem = new PlanDetails();
-                        resultitem.Iteration = iteration;
-                        resultitem.Application = App;
-
-                        var outcome = string.Empty;
-                        outcome = tpoint.MostRecentResultOutcome.ToString();
-
-                        if (outcome.Equals("Blocked", StringComparison.InvariantCultureIgnoreCase))
-                        {
-                            if (
-                                !tpoint.MostRecentResult.Outcome.ToString()
-                                    .Equals("Blocked", StringComparison.InvariantCultureIgnoreCase))
-                                resultitem.Outcome = "Active";
-                            else
-                                resultitem.Outcome = "Blocked";
-                        }
-                        else if (outcome.Equals("Unspecified", StringComparison.InvariantCultureIgnoreCase) ||
-                                 outcome.Equals("None", StringComparison.InvariantCultureIgnoreCase))
-                        {
-                            resultitem.Outcome = "Active";
-                        }
-                        else
-                        {
-                            resultitem.Outcome = outcome;
-                        }
-
-                        resultitem.TcID = tpoint.TestCaseId;
-
-                        resultitem.Priority = tpoint.TestCaseWorkItem.Priority;
-                        allcases.Add(resultitem);
-                    }
-                });
-            });
-
-            return allcases;
-        }
+     
 
 
         /// <summary>
@@ -173,7 +139,7 @@ namespace MTMIntegration
         public static void initializeVSTFUpdate(Uri ConnUri, string Project, int PlanID, string BuildNumber)
         {
             TempURI = ConnUri;
-            TestPlanID = PlanID;
+            testplanid = PlanID;
             
             ProjectName = Project;
             TfsProjColl = TfsTeamProjectCollectionFactory.GetTeamProjectCollection(TempURI);
@@ -185,7 +151,7 @@ namespace MTMIntegration
                 wstore = (WorkItemStore) TfsProjColl.GetService(typeof (WorkItemStore));
                 TeamProject = Tms.GetTeamProject(ProjectName);
                 TestPlan = TeamProject.TestPlans.Find(TestPlanID);
-                planName = TestPlan.Name;
+                PlanName = TestPlan.Name;
 
                 TeamProject.TfsIdentityStore.Refresh();
 
@@ -518,23 +484,7 @@ namespace MTMIntegration
                 {
                     res.AutomationStatus = false;
                 }
-                try
-                {
-                    stp.Restart();
-                    var tc = tpoint.TestCaseWorkItem;
-                    res.Priority = tc.Priority;
-                    stp.Stop();
-                    PriorityTime = PriorityTime + (float) stp.ElapsedMilliseconds/1000;
-
-                    stp.Restart();
-                    //res.AutomationTestName = tc.Implementation.DisplayText;
-                    stp.Stop();
-                    AutomationTestNameFetchTime += (float) stp.ElapsedMilliseconds/1000;
-                }
-                catch (Exception)
-                {
-                    res.Priority = -1;
-                }
+               
                 try
                 {
                     stp.Restart();
@@ -846,324 +796,7 @@ namespace MTMIntegration
         }
 
 
-        /// <summary>
-        ///     Query Interface Implementation.
-        /// </summary>
-        /// <param name="planId"></param>
-        /// <param name="status"></param>
-        public static List<querydetails> getQueryResults(int suiteid, List<filter> inFilter, string suitename)
-        {
-            var suitelist = getsubsuites(suiteid);
-            suitelist = suitelist.Substring(0, suitelist.Length - 3);
-            var pointCollection = TestPlan.QueryTestPoints(TestSuiteQuery.Replace("[#testsuiteid#]", suitelist));
-            // like "SELECT * from TestPoint where TestCaseId='185716'
-            var retrylist = new List<ITestPoint>();
-            var resdetails = new List<querydetails>();
-            var newresdetails = new List<querydetails>();
-
-            var res = new querydetails();
-            var testers = new List<string>();
-
-            foreach (var fil in inFilter)
-            {
-                if (fil.name.Equals("Outcome", StringComparison.InvariantCultureIgnoreCase))
-                {
-                    if (fil.op.Equals("="))
-                    {
-                        foreach (var tpoint in pointCollection)
-                        {
-                            res = new querydetails();
-
-                            var outcome = string.Empty;
-                            outcome = tpoint.MostRecentResultOutcome.ToString();
-                            if (outcome.Equals("Blocked", StringComparison.InvariantCultureIgnoreCase))
-                            {
-                                if (
-                                    !tpoint.MostRecentResult.Outcome.ToString()
-                                        .Equals("Blocked", StringComparison.InvariantCultureIgnoreCase))
-                                    outcome = "Unspecified";
-                            }
-                            if (outcome.Equals("Unspecified", StringComparison.InvariantCultureIgnoreCase))
-                                outcome = "Active";
-                            if (outcome.Equals(fil.value, StringComparison.InvariantCultureIgnoreCase))
-                            {
-                                try
-                                {
-                                    res.TcId = tpoint.TestCaseWorkItem.Id;
-                                    res.Tester = tpoint.AssignedTo.DisplayName;
-                                    res.Title = tpoint.TestCaseWorkItem.Title;
-                                    res.Priority = tpoint.TestCaseWorkItem.Priority;
-                                    res.AutomationStatus = tpoint.IsTestCaseAutomated;
-                                    res.Outcome = outcome;
-                                    //      res.Date = tpoint.MostRecentResult.DateCompleted;      
-                                }
-
-                                catch (Exception)
-                                {
-                                    res.AutomationStatus = false;
-                                    res.Priority = -1;
-                                    res.Tester = "Nobody";
-                                }
-
-                                resdetails.Add(res);
-                            }
-                        }
-                    }
-
-                    else if (fil.op.Equals("!="))
-                    {
-                        foreach (var tpoint in pointCollection)
-                        {
-                            res = new querydetails();
-
-                            var outcome = string.Empty;
-                            outcome = tpoint.MostRecentResultOutcome.ToString();
-                            if (outcome.Equals("Blocked", StringComparison.InvariantCultureIgnoreCase))
-                            {
-                                if (
-                                    !tpoint.MostRecentResult.Outcome.ToString()
-                                        .Equals("Blocked", StringComparison.InvariantCultureIgnoreCase))
-                                    outcome = "Unspecified";
-                            }
-                            if (outcome.Equals("Unspecified", StringComparison.InvariantCultureIgnoreCase))
-                                outcome = "Active";
-                            if (!outcome.Equals(fil.value, StringComparison.InvariantCultureIgnoreCase))
-                            {
-                                try
-                                {
-                                    res.TcId = tpoint.TestCaseWorkItem.Id;
-                                    res.Tester = tpoint.AssignedTo.DisplayName;
-                                    res.Title = tpoint.TestCaseWorkItem.Title;
-                                    res.Priority = tpoint.TestCaseWorkItem.Priority;
-                                    res.AutomationStatus = tpoint.IsTestCaseAutomated;
-                                    res.Outcome = outcome;
-
-                                    //        res.Date = tpoint.MostRecentResult.DateCompleted;
-                                }
-
-                                catch (Exception)
-                                {
-                                    res.AutomationStatus = false;
-                                    res.Priority = -1;
-                                    res.Tester = "Nobody";
-                                }
-                                resdetails.Add(res);
-                            }
-                        }
-                    }
-                }
-
-                else
-                {
-                    foreach (var tpoint in pointCollection)
-                    {
-                        res = new querydetails();
-
-
-                        var outcome = string.Empty;
-                        outcome = tpoint.MostRecentResultOutcome.ToString();
-                        if (outcome.Equals("Blocked", StringComparison.InvariantCultureIgnoreCase))
-                        {
-                            if (
-                                !tpoint.MostRecentResult.Outcome.ToString()
-                                    .Equals("Blocked", StringComparison.InvariantCultureIgnoreCase))
-                                outcome = "Unspecified";
-                        }
-                        if (outcome.Equals("Unspecified", StringComparison.InvariantCultureIgnoreCase))
-                            outcome = "Active";
-                        try
-                        {
-                            res.TcId = tpoint.TestCaseWorkItem.Id;
-                            res.Tester = tpoint.AssignedTo.DisplayName;
-                            res.Title = tpoint.TestCaseWorkItem.Title;
-                            res.Priority = tpoint.TestCaseWorkItem.Priority;
-                            res.AutomationStatus = tpoint.IsTestCaseAutomated;
-                            res.Outcome = outcome;
-                            //  res.Date = tpoint.MostRecentResult.DateCompleted;
-                        }
-                        catch (Exception)
-                        {
-                            res.AutomationStatus = false;
-                            res.Priority = -1;
-                            res.Tester = "Nobody";
-                        }
-
-                        resdetails.Add(res);
-                    }
-                }
-
-
-                if (fil.name.Equals("TestCaseID", StringComparison.InvariantCultureIgnoreCase))
-                {
-                    if (fil.op.Equals("="))
-                    {
-                        foreach (var item in resdetails)
-                        {
-                            if (item.TcId == int.Parse(fil.value))
-                            {
-                                newresdetails.Add(item);
-                            }
-                        }
-                    }
-
-
-                    if (fil.op.Equals("!="))
-                    {
-                        foreach (var item in resdetails)
-                        {
-                            if (item.TcId != int.Parse(fil.value))
-                            {
-                                newresdetails.Add(item);
-                            }
-                        }
-                    }
-
-
-                    if (fil.op.Equals(">"))
-                    {
-                        foreach (var item in resdetails)
-                        {
-                            if (item.TcId > int.Parse(fil.value))
-                            {
-                                newresdetails.Add(item);
-                            }
-                        }
-                    }
-
-                    if (fil.op.Equals("<"))
-                    {
-                        foreach (var item in resdetails)
-                        {
-                            if (item.TcId < int.Parse(fil.value))
-                            {
-                                newresdetails.Add(item);
-                            }
-                        }
-                    }
-
-
-                    resdetails = new List<querydetails>();
-
-                    foreach (var i in newresdetails)
-                    {
-                        resdetails.Add(i);
-                    }
-
-                    newresdetails = new List<querydetails>();
-                }
-
-                if (fil.name.Equals("Priority", StringComparison.InvariantCultureIgnoreCase))
-                {
-                    if (fil.op.Equals("="))
-                    {
-                        res = new querydetails();
-                        foreach (var item in resdetails)
-                        {
-                            if (item.Priority == int.Parse(fil.value))
-                            {
-                                newresdetails.Add(item);
-                            }
-                        }
-                    }
-
-
-                    if (fil.op.Equals("!="))
-                    {
-                        foreach (var item in resdetails)
-                        {
-                            if (item.Priority != int.Parse(fil.value))
-                            {
-                                newresdetails.Add(item);
-                            }
-                        }
-                    }
-
-
-                    if (fil.op.Equals(">"))
-                    {
-                        foreach (var item in resdetails)
-                        {
-                            if (item.Priority > int.Parse(fil.value))
-                            {
-                                newresdetails.Add(item);
-                            }
-                        }
-                    }
-
-                    if (fil.op.Equals("<"))
-                    {
-                        foreach (var item in resdetails)
-                        {
-                            if (item.Priority < int.Parse(fil.value))
-                            {
-                                newresdetails.Add(item);
-                            }
-                        }
-                    }
-
-
-                    resdetails = new List<querydetails>();
-
-                    foreach (var i in newresdetails)
-                    {
-                        resdetails.Add(i);
-                    }
-
-                    newresdetails = new List<querydetails>();
-                }
-
-                if (fil.name.Equals("Tester", StringComparison.InvariantCultureIgnoreCase))
-                {
-                    if (fil.op.Equals("="))
-                    {
-                        foreach (var item in resdetails)
-                        {
-                            if (item.Tester.Equals(fil.value, StringComparison.InvariantCultureIgnoreCase))
-                            {
-                                newresdetails.Add(item);
-                            }
-                        }
-                    }
-
-                    if (fil.op.Equals("!="))
-                    {
-                        foreach (var item in resdetails)
-                        {
-                            if (!item.Tester.Equals(fil.value, StringComparison.InvariantCultureIgnoreCase))
-                            {
-                                newresdetails.Add(item);
-                            }
-                        }
-                    }
-
-                    resdetails = new List<querydetails>();
-
-                    foreach (var i in newresdetails)
-                    {
-                        resdetails.Add(i);
-                    }
-
-                    newresdetails = new List<querydetails>();
-                }
-
-                if (fil.name.Equals("Title", StringComparison.CurrentCultureIgnoreCase))
-                {
-                    if (fil.op.Equals("="))
-                    {
-                        foreach (var item in resdetails)
-                        {
-                            if (res.Title.Contains(fil.value))
-                            {
-                                newresdetails.Add(item);
-                            }
-                        }
-                    }
-                }
-            }
-
-
-            return resdetails;
-        }
+     
 
         /// <summary>
         ///     Assign Tester to select test cases in Query Filter
@@ -1229,7 +862,7 @@ namespace MTMIntegration
                     writer.WriteLine(playlistFileContent);
                 }
                 stp.Stop();
-                AutomationMethodTime1 = (float) stp.ElapsedMilliseconds/1000;
+                AutomationPlaylistAddition = (float) stp.ElapsedMilliseconds/1000;
 
                
                 

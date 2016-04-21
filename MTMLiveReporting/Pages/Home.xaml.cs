@@ -1,4 +1,8 @@
-﻿using System;
+﻿//------------------------------------------------------------------------------------------------------- 
+// Copyright (C) Microsoft. All rights reserved. 
+// Licensed under the MIT license. See LICENSE.txt file in the project root for full license information. 
+//------------------------------------------------------------------------------------------------------- 
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Windows;
@@ -30,7 +34,7 @@ namespace MTMLiveReporting.Pages
                 try
             {
 
-                if (string.IsNullOrEmpty(MTMInteraction.planName))
+                if (string.IsNullOrEmpty(MTMInteraction.PlanName))
                 {
                     MTMInteraction.initializeVSTFUpdate(new Uri(ConfigurationManager.AppSettings["TFSUrl"]),
                             ConfigurationManager.AppSettings["TeamProject"],
@@ -122,11 +126,7 @@ namespace MTMLiveReporting.Pages
                         expExlTLR.dataToExport = (List<TesterLevelReport>) ResultDataGrid.ItemsSource;
                         expExlTLR.GenerateExcel();
                         break;
-                    case "EXECUTIONTREND":
-                        var expExlexec = new ExportToExcel<ExecutionTrend, List<ExecutionTrend>>();
-                        expExlexec.dataToExport = (List<ExecutionTrend>) ResultDataGrid.ItemsSource;
-                        expExlexec.GenerateExcel();
-                        break;
+                  
                     case "TESTLIST":
                         var tlist = new ExportToExcel<TestList, List<TestList>>();
                         tlist.dataToExport = (List<TestList>) ResultDataGrid.ItemsSource;
@@ -236,11 +236,9 @@ namespace MTMLiveReporting.Pages
                             testerfilter, testerinclusion, automationstatus);
                         
                         break;
-                    case "EXECUTIONTREND":
-                        ResultDataGrid.ItemsSource = ExecutionTrend.Generate(rawdata, modulefilter, moduleinclusion,
-                            testerfilter, testerinclusion, automationstatus);
+                    
                        
-                        break;
+                       
                     case "TESTLIST":
                         ResultDataGrid.ItemsSource = TestList.Generate(rawdata, modulefilter, moduleinclusion,
                             testerfilter, testerinclusion, automationstatus);
@@ -392,10 +390,7 @@ namespace MTMLiveReporting.Pages
                         ResultDataGrid.ItemsSource = OneLineSummary.Generate(rawdata, modulefilter, moduleinclusion,
                             testerfilter, testerinclusion, automationstatus);
                         break;
-                    case "EXECUTIONTREND":
-                        ResultDataGrid.ItemsSource = ExecutionTrend.Generate(rawdata, modulefilter, moduleinclusion,
-                            testerfilter, testerinclusion, automationstatus);
-                        break;
+                
                     case "TESTLIST":
                         ResultDataGrid.ItemsSource = TestList.Generate(rawdata, modulefilter, moduleinclusion,
                             testerfilter, testerinclusion, automationstatus);

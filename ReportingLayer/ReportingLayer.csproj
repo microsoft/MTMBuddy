@@ -37,10 +37,11 @@
     <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup>
-    <SignAssembly>true</SignAssembly>
+    <SignAssembly>false</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
-    <AssemblyOriginatorKeyFile>MTMBuddySignature.pfx</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>
+    </AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -52,13 +53,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Query Filter.cs" />
     <Compile Include="ReleaseLevelAppProgram.cs" />
     <Compile Include="Release Level.cs" />
     <Compile Include="Automation.cs" />
     <Compile Include="QueryInterface.cs" />
     <Compile Include="TestList.cs" />
-    <Compile Include="ExecutionTrend.cs" />
     <Compile Include="OneLineSummary.cs" />
     <Compile Include="TesterLevelReportgroup.cs" />
     <Compile Include="ModuleLevelReportgroup.cs" />
@@ -73,9 +72,6 @@
       <Project>{7000f7ad-1df8-470e-9e76-3d437156023e}</Project>
       <Name>MTMIntegration</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="MTMBuddySignature.pfx" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
