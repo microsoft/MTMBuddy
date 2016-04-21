@@ -24,15 +24,15 @@ namespace ReportingLayer
 
         public string LastRefreshDate { get; set; }
     
-        public static List<SummaryReport> Generate(List<resultsummary> rawData, string module = "",
+        public static List<SummaryReport> Generate(List<ResultSummary> rawData, string module = "",
             bool moduleinclusion = true, string tester = "", bool testerinclusion = true,
             string automationstatus = "both")
         {
             //rawData = rawData.OrderBy(l => l.Priority).ThenBy(l => l.Outcome).ToList();
 
             var reportList = new List<SummaryReport>();
-            var rd = new List<resultsummary>();
-            var filtereddata = Utilities.filterdata(rawData, module, moduleinclusion, tester, testerinclusion,
+            var rd = new List<ResultSummary>();
+            var filtereddata = Utilities.FilterData(rawData, module, moduleinclusion, tester, testerinclusion,
                 automationstatus);
             for (var i = 1; i <= 3; i++)
             {

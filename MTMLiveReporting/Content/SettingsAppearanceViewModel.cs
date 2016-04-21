@@ -33,9 +33,9 @@ namespace MTMLiveReporting.Content
 
         // 20 accent colors from Windows Phone 8
 
-        private Color selectedAccentColor;
-        private string selectedFontSize;
-        private Link selectedTheme;
+        private Color _selectedAccentColor;
+        private string _selectedFontSize;
+        private Link _selectedTheme;
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2214:DoNotCallOverridableMethodsInConstructors")]
         public SettingsAppearanceViewModel()
@@ -82,12 +82,12 @@ namespace MTMLiveReporting.Content
 
         public Link SelectedTheme
         {
-            get { return selectedTheme; }
+            get { return _selectedTheme; }
             set
             {
-                if (selectedTheme != value)
+                if (_selectedTheme != value)
                 {
-                    selectedTheme = value;
+                    _selectedTheme = value;
                     OnPropertyChanged("SelectedTheme");
 
                     // and update the actual theme
@@ -99,12 +99,12 @@ namespace MTMLiveReporting.Content
 
         public string SelectedFontSize
         {
-            get { return selectedFontSize; }
+            get { return _selectedFontSize; }
             set
             {
-                if (selectedFontSize != value)
+                if (_selectedFontSize != value)
                 {
-                    selectedFontSize = value;
+                    _selectedFontSize = value;
                     OnPropertyChanged("SelectedFontSize");
 
                     AppearanceManager.Current.FontSize = value == FontLarge ? FontSize.Large : FontSize.Small;
@@ -115,12 +115,12 @@ namespace MTMLiveReporting.Content
 
         public Color SelectedAccentColor
         {
-            get { return selectedAccentColor; }
+            get { return _selectedAccentColor; }
             set
             {
-                if (selectedAccentColor != value)
+                if (_selectedAccentColor != value)
                 {
-                    selectedAccentColor = value;
+                    _selectedAccentColor = value;
                     OnPropertyChanged("SelectedAccentColor");
 
                     AppearanceManager.Current.AccentColor = value;

@@ -48,7 +48,7 @@ namespace ReportingLayer
         public float P3ProgressRate { get; set; }
 
 
-        public static List<ModuleLevelReport> Generate(List<resultsummary> rawData, string module = "",
+        public static List<ModuleLevelReport> Generate(List<ResultSummary> rawData, string module = "",
             bool moduleinclusion = true, string tester = "", bool testerinclusion = true,
             string automationstatus = "both")
         {
@@ -56,8 +56,8 @@ namespace ReportingLayer
 
 
             var modreplist = new List<ModuleLevelReport>();
-            var rd = new List<resultsummary>();
-            var filtereddata = Utilities.filterdata(rawData, module, moduleinclusion, tester, testerinclusion,
+            var rd = new List<ResultSummary>();
+            var filtereddata = Utilities.FilterData(rawData, module, moduleinclusion, tester, testerinclusion,
                 automationstatus);
 
             //get distinct modules
@@ -68,7 +68,7 @@ namespace ReportingLayer
             {
                 var modrep = new ModuleLevelReport();
                 modrep.Module = repmodule;
-                var moduledata = Utilities.filterdata(rawData, repmodule, true, tester, testerinclusion,
+                var moduledata = Utilities.FilterData(rawData, repmodule, true, tester, testerinclusion,
                     automationstatus);
                 //Overall data
                 modrep.Total = moduledata.Count;

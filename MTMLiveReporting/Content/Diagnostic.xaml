@@ -15,7 +15,7 @@
         <TextBlock Grid.Row="0" Text="Diagnostic" Style="{StaticResource Heading2}" />
 
         <TextBox VerticalScrollBarVisibility="Auto" Grid.Row="1" HorizontalAlignment="Stretch"
-                 VerticalAlignment="Stretch" TextWrapping="Wrap" x:Name="txtDiagnostic" />
+                 VerticalAlignment="Stretch" TextWrapping="Wrap" x:Name="TxtDiagnostic" />
 
         <Button Content="Refresh" Grid.Row="2" Width="80" HorizontalAlignment="Right" Click="Button_Click" />
         <Button Content="Clear" Grid.Row="2" Width="80" HorizontalAlignment="Left" Click="Button_Click_1" />

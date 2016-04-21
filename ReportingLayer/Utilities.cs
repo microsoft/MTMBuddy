@@ -11,9 +11,9 @@ namespace ReportingLayer
 {
     public static class Utilities
     {
-        public static List<resultsummary> GetIssueList(List<resultsummary> rawData)
+        public static List<ResultSummary> GetIssueList(List<ResultSummary> rawData)
         {
-            var issuelist = new List<resultsummary>();
+            var issuelist = new List<ResultSummary>();
             issuelist.Clear();
             issuelist.AddRange(rawData.Where(p => p.Priority < 1).ToList());
             issuelist.AddRange(rawData.Where(p => p.Priority > 3).ToList());
@@ -27,11 +27,11 @@ namespace ReportingLayer
             return issuelist;
         }
 
-        public static List<resultsummary> filterdata(List<resultsummary> rawData, string module = "",
+        public static List<ResultSummary> FilterData(List<ResultSummary> rawData, string module = "",
             bool moduleinclusion = true, string tester = "", bool testerinclusion = true,
             string automationstatus = "BOTH")
         {
-            var filtereddata = new List<resultsummary>();
+            var filtereddata = new List<ResultSummary>();
 
             //filter data
 

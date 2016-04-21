@@ -15,23 +15,24 @@ namespace MTMLiveReporting.Content
         public Diagnostic()
         {
             InitializeComponent();
-            txtDiagnostic.Text = DataGetter.diagnostic.ToString();
+            
+            TxtDiagnostic.Text = DataGetter.Diagnostic.ToString();
         }
 
         private void UserControl_GotFocus(object sender, RoutedEventArgs e)
         {
-            txtDiagnostic.Text = DataGetter.diagnostic.ToString();
+            TxtDiagnostic.Text = DataGetter.Diagnostic.ToString();
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            txtDiagnostic.Text = DataGetter.diagnostic.ToString();
+            TxtDiagnostic.Text = DataGetter.Diagnostic.ToString();
         }
 
         private void Button_Click_1(object sender, RoutedEventArgs e)
         {
-            txtDiagnostic.Text = "";
-            DataGetter.diagnostic.Clear();
+            TxtDiagnostic.Text = "";
+            DataGetter.Diagnostic.Clear();
         }
     }
 }

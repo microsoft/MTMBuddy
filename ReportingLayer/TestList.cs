@@ -11,7 +11,7 @@ namespace ReportingLayer
     public class TestList
     {
         public string SuiteName { get; set; }
-        public int TCId { get; set; }
+        public int TcId { get; set; }
 
         public string Title { get; set; }
         public int Priority { get; set; }
@@ -21,15 +21,15 @@ namespace ReportingLayer
         public bool AutomationStatus { get; set; }
 
 
-        public static List<TestList> Generate(List<resultsummary> rawData, string module = "",
+        public static List<TestList> Generate(List<ResultSummary> rawData, string module = "",
             bool moduleinclusion = true, string tester = "", bool testerinclusion = true,
             string automationstatus = "both")
         {
             //rawData = rawData.OrderBy(l => l.Priority).ThenBy(l => l.Outcome).ToList();
 
             var reportList = new List<TestList>();
-            var rd = new List<resultsummary>();
-            var filtereddata = Utilities.filterdata(rawData, module, moduleinclusion, tester, testerinclusion,
+            var rd = new List<ResultSummary>();
+            var filtereddata = Utilities.FilterData(rawData, module, moduleinclusion, tester, testerinclusion,
                 automationstatus);
 
             foreach (var res in filtereddata)
@@ -40,7 +40,7 @@ namespace ReportingLayer
                 tlitem.Outcome = res.Outcome;
                 tlitem.Priority = res.Priority;
                 tlitem.SuiteName = res.SuiteName;
-                tlitem.TCId = res.TcId;
+                tlitem.TcId = res.TCID;
                 tlitem.Tester = res.Tester;
                 tlitem.Title = res.Title;
                 reportList.Add(tlitem);

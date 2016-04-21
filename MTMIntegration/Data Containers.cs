@@ -12,45 +12,45 @@ namespace MTMIntegration
     /// <summary>
     ///     Result Summary object containing plan,suite, outcome, Runby and comments
     /// </summary>
-    public class resultsummary
+    public class ResultSummary
     {
         /// <summary>
         ///     Date of the result.
         /// </summary>
-        private DateTime date;
+        private DateTime _date;
 
         /// <summary>
         ///     The Outcome of the result
         /// </summary>
-        private string outcome;
+        private string _outcome;
 
         /// <summary>
         ///     The priority for the testcase
         /// </summary>
-        private int priority;
+        private int _priority;
 
         /// <summary>
         ///     Suitename
         /// </summary>
-        private string suitename;
+        private string _suitename;
 
         /// <summary>
         ///     The testcaseid for the result
         /// </summary>
-        private int tcid;
+        private int _tcid;
 
         /// <summary>
         ///     Tester as per MTM
         /// </summary>
-        private string tester;
+        private string _tester;
 
         /// <summary>
         ///     The testcaseid for the result
         /// </summary>
-        public int TcId
+        public int TCID
         {
-            get { return tcid; }
-            set { tcid = value; }
+            get { return _tcid; }
+            set { _tcid = value; }
         }
 
         /// <summary>
@@ -58,8 +58,8 @@ namespace MTMIntegration
         /// </summary>
         public int Priority
         {
-            get { return priority; }
-            set { priority = value; }
+            get { return _priority; }
+            set { _priority = value; }
         }
 
         /// <summary>
@@ -69,8 +69,8 @@ namespace MTMIntegration
         /// </summary>
         public string Outcome
         {
-            get { return outcome; }
-            set { outcome = value; }
+            get { return _outcome; }
+            set { _outcome = value; }
         }
 
         /// <summary>
@@ -78,16 +78,16 @@ namespace MTMIntegration
         /// </summary>
         public DateTime Date
         {
-            get { return date; }
-            set { date = value; }
+            get { return _date; }
+            set { _date = value; }
         }
         /// <summary>
         ///     Tester as per MTM. If no Tester is specified, we show 'Nobody'
         /// </summary>
         public string Tester
         {
-            get { return tester; }
-            set { tester = value; }
+            get { return _tester; }
+            set { _tester = value; }
         }
 
         /// <summary>
@@ -95,8 +95,8 @@ namespace MTMIntegration
         /// </summary>
         public string SuiteName
         {
-            get { return suitename; }
-            set { suitename = value; }
+            get { return _suitename; }
+            set { _suitename = value; }
         }
 
         /// <summary>

@@ -25,33 +25,33 @@ namespace MTMLiveReporting
 
       
 
-        public static StringBuilder diagnostic = new StringBuilder();
+        public static StringBuilder Diagnostic = new StringBuilder();
 
-        private static readonly Stopwatch stp = new Stopwatch();
+        private static readonly Stopwatch Stp = new Stopwatch();
 
-        public static List<resultsummary> GetResultSummaryList(int suiteId, string suiteName)
+        public static List<ResultSummary> GetResultSummaryList(int suiteId, string suiteName)
         {
-            var resDetail = new ConcurrentBag<resultsummary>();
-            stp.Restart();
-            MTMInteraction.clearperfcounters();
-            MTMInteraction.getsuiteresults(suiteId, resDetail, suiteName);
-            stp.Stop();
-            diagnostic.AppendLine("Fetch Suite data for " + suiteName + "-" + suiteId + ":    " +
-                                  stp.Elapsed.TotalSeconds);
-            diagnostic.AppendLine("Outcometime:   " + MTMInteraction.OutcomeTime);
-            diagnostic.AppendLine("Priority Time:   " + MTMInteraction.PriorityTime);
-            diagnostic.AppendLine("Tester Time:   " + MTMInteraction.TesterTime);
-            diagnostic.AppendLine("Title Time:   " + MTMInteraction.Titletime);
-            diagnostic.AppendLine("Initialize Time:   " + MTMInteraction.Initialize);
-            diagnostic.AppendLine("Test Case Id Time:   " + MTMInteraction.tcidtime);
-            diagnostic.AppendLine("Automation Status Time:   " + MTMInteraction.AutomationTime);
-            diagnostic.AppendLine("Plan:   " + MTMInteraction.PlanName);
-            diagnostic.AppendLine("Total count:  " + resDetail.Count() + "    Blocked Count:   " +
+            var resDetail = new ConcurrentBag<ResultSummary>();
+            Stp.Restart();
+            MtmInteraction.Clear_performance_counters();
+            MtmInteraction.Getsuiteresults(suiteId, resDetail, suiteName);
+            Stp.Stop();
+            Diagnostic.AppendLine("Fetch Suite data for " + suiteName + "-" + suiteId + ":    " +
+                                  Stp.Elapsed.TotalSeconds);
+            Diagnostic.AppendLine("Outcometime:   " + MtmInteraction.OutcomeTime);
+            Diagnostic.AppendLine("Priority Time:   " + MtmInteraction.PriorityTime);
+            Diagnostic.AppendLine("Tester Time:   " + MtmInteraction.TesterTime);
+            Diagnostic.AppendLine("Title Time:   " + MtmInteraction.Titletime);
+            Diagnostic.AppendLine("Initialize Time:   " + MtmInteraction.Initialize);
+            Diagnostic.AppendLine("Test Case Id Time:   " + MtmInteraction.TCidtime);
+            Diagnostic.AppendLine("Automation Status Time:   " + MtmInteraction.AutomationTime);
+            Diagnostic.AppendLine("Plan:   " + MtmInteraction.SelectedPlanName);
+            Diagnostic.AppendLine("Total count:  " + resDetail.Count() + "    Blocked Count:   " +
                                   resDetail.Where(
                                       l => l.Outcome.Equals("Blocked", StringComparison.InvariantCultureIgnoreCase))
                                       .Count());
          
-            diagnostic.AppendLine("---------------------------------------------------");
+            Diagnostic.AppendLine("---------------------------------------------------");
            
             return resDetail.ToList();
         }

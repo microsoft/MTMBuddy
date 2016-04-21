@@ -20,15 +20,15 @@ namespace MTMLiveReporting
     ///     Interaction logic for SettingsVSTF.xaml
     /// </summary>
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "VSTF")]
-    public partial class SettingsVSTF : UserControl
+    public partial class SettingsVstf : UserControl
     {
-        public SettingsVSTF()
+        public SettingsVstf()
         {
             InitializeComponent();
-            txtTfsUrl.Text = ConfigurationManager.AppSettings["TFSUrl"];
-            txtTeamProject.Text = ConfigurationManager.AppSettings["TeamProject"];
+            TxtTfsUrl.Text = ConfigurationManager.AppSettings["TFSUrl"];
+            TxtTeamProject.Text = ConfigurationManager.AppSettings["TeamProject"];
         
-            txtTestPlanID.Text = ConfigurationManager.AppSettings["TestPlanID"];
+            TxtTestPlanId.Text = ConfigurationManager.AppSettings["TestPlanID"];
      
         }
 
@@ -38,32 +38,31 @@ namespace MTMLiveReporting
             
             
 
-            ConfigurationManager.AppSettings["TFSUrl"] = txtTfsUrl.Text;
-            ConfigurationManager.AppSettings["TeamProject"] = txtTeamProject.Text;
+            ConfigurationManager.AppSettings["TFSUrl"] = TxtTfsUrl.Text;
+            ConfigurationManager.AppSettings["TeamProject"] = TxtTeamProject.Text;
         
-            ConfigurationManager.AppSettings["TestPlanId"] = txtTestPlanID.Text;
+            ConfigurationManager.AppSettings["TestPlanId"] = TxtTestPlanId.Text;
        
             try
             {
-                MTMInteraction.initializeVSTFUpdate(new Uri(ConfigurationManager.AppSettings["TFSUrl"]),
+                MtmInteraction.Initialize_VSTF(new Uri(ConfigurationManager.AppSettings["TFSUrl"]),
                     ConfigurationManager.AppSettings["TeamProject"],
-                    int.Parse(ConfigurationManager.AppSettings["TestPlanID"]),
-                    ConfigurationManager.AppSettings["BuildNumber"]);
-                DataGetter.SaveConfig("TFSUrl", txtTfsUrl.Text);
-                DataGetter.SaveConfig("TeamProject", txtTeamProject.Text);
-                DataGetter.SaveConfig("TestPlanID", txtTestPlanID.Text);
+                    int.Parse(ConfigurationManager.AppSettings["TestPlanID"]));
+                DataGetter.SaveConfig("TFSUrl", TxtTfsUrl.Text);
+                DataGetter.SaveConfig("TeamProject", TxtTeamProject.Text);
+                DataGetter.SaveConfig("TestPlanID", TxtTestPlanId.Text);
 
                 ConfigurationManager.AppSettings["FirstRun"] = false.ToString();
                 DataGetter.SaveConfig("FirstRun", false.ToString());
 
 
 
-                DataGetter.diagnostic.AppendLine("Config changed:");
-                DataGetter.diagnostic.AppendLine("TFS URL: " + txtTfsUrl.Text);
-                DataGetter.diagnostic.AppendLine("Team Project: " + txtTeamProject.Text);
+                DataGetter.Diagnostic.AppendLine("Config changed:");
+                DataGetter.Diagnostic.AppendLine("TFS URL: " + TxtTfsUrl.Text);
+                DataGetter.Diagnostic.AppendLine("Team Project: " + TxtTeamProject.Text);
                
 
-                DataGetter.diagnostic.AppendLine("---------------------------------------------------");
+                DataGetter.Diagnostic.AppendLine("---------------------------------------------------");
                 MessageBox.Show("Voila! All changes have been saved.");
             }
 

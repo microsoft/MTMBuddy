@@ -38,8 +38,8 @@ namespace MTMLiveReporting
             {
                 AppearanceManager.Current.FontSize = FirstFloor.ModernUI.Presentation.FontSize.Small;
             }
-            var Theme = ConfigurationManager.AppSettings["Theme"];
-            if (Theme.Equals("dark", StringComparison.InvariantCultureIgnoreCase))
+            var theme = ConfigurationManager.AppSettings["Theme"];
+            if (theme.Equals("dark", StringComparison.InvariantCultureIgnoreCase))
             {
                 AppearanceManager.Current.ThemeSource = AppearanceManager.DarkThemeSource;
             }
@@ -54,13 +54,12 @@ namespace MTMLiveReporting
                 try
                 {
 
-                    MTMInteraction.initializeVSTFUpdate(new Uri(ConfigurationManager.AppSettings["TFSUrl"]),
+                    MtmInteraction.Initialize_VSTF(new Uri(ConfigurationManager.AppSettings["TFSUrl"]),
                         ConfigurationManager.AppSettings["TeamProject"],
-                        int.Parse(ConfigurationManager.AppSettings["TestPlanID"]),
-                        ConfigurationManager.AppSettings["BuildNumber"]);
-                    DataGetter.diagnostic.AppendLine("TFS URL: " + ConfigurationManager.AppSettings["TFSUrl"]);
-                    DataGetter.diagnostic.AppendLine("Team Project: " + ConfigurationManager.AppSettings["TeamProject"]);
-                    DataGetter.diagnostic.AppendLine("---------------------------------------------------");
+                        int.Parse(ConfigurationManager.AppSettings["TestPlanID"]));
+                    DataGetter.Diagnostic.AppendLine("TFS URL: " + ConfigurationManager.AppSettings["TFSUrl"]);
+                    DataGetter.Diagnostic.AppendLine("Team Project: " + ConfigurationManager.AppSettings["TeamProject"]);
+                    DataGetter.Diagnostic.AppendLine("---------------------------------------------------");
                    
                 }
                 catch (Exception exp)

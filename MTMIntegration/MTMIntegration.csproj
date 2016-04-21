@@ -83,7 +83,7 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="TestCaseUpdates.cs" />
+    <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="Data Containers.cs" />
     <Compile Include="MTMInteraction.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

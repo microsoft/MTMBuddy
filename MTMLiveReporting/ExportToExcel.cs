@@ -23,11 +23,11 @@ using ReportingLayer;
 
 namespace MTMLiveReporting
 {
-    public class ExportToExcel<T, U>
+    public class ExportToExcel<T, TU>
         where T : class
-        where U : List<T>
+        where TU : List<T>
     {
-        public List<T> dataToExport;
+        public List<T> DataToExport;
         private Excel.Application _excelApp = null;
         private Excel.Workbooks _books = null;
         private Excel._Workbook _book = null;
@@ -38,9 +38,9 @@ namespace MTMLiveReporting
 
         public void GenerateExcel()
         {
-            if (dataToExport != null)
+            if (DataToExport != null)
             {
-                if (dataToExport.Count != 0)
+                if (DataToExport.Count != 0)
                 {
                     //MergeData();
                     // Create Excel Objects
@@ -65,11 +65,11 @@ namespace MTMLiveReporting
                     _font.Bold = true;
 
                     // Write Data
-                    object[,] objData = new object[dataToExport.Count, headerToAdd.Length];
+                    object[,] objData = new object[DataToExport.Count, headerToAdd.Length];
 
-                    for (int j = 0; j < dataToExport.Count; j++)
+                    for (int j = 0; j < DataToExport.Count; j++)
                     {
-                        var item = dataToExport[j];
+                        var item = DataToExport[j];
                         for (int i = 0; i < headerToAdd.Length; i++)
                         {
                             var y = typeof(T).InvokeMember(headerToAdd[i].ToString(),
@@ -77,9 +77,9 @@ namespace MTMLiveReporting
                             objData[j, i] = (y == null) ? "" : y.ToString();
                         }
                     }
-                    AddExcelRows("A2", dataToExport.Count, headerToAdd.Length, objData);
+                    AddExcelRows("A2", DataToExport.Count, headerToAdd.Length, objData);
                     _range = _sheet.get_Range("A1");
-                    _range = _range.get_Resize(dataToExport.Count + 1, headerToAdd.Length);
+                    _range = _range.get_Resize(DataToExport.Count + 1, headerToAdd.Length);
                     _range.Columns.AutoFit();
                     var path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Reports","ReportData_" + typeof(T).Name + ".xlsx");
                     _book.SaveCopyAs(path);

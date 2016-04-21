@@ -36,7 +36,7 @@ namespace ReportingLayer
         public int Active { get; set; }
 
 
-        public static List<OneLineSummary> Generate(List<resultsummary> rawData, string module = "",
+        public static List<OneLineSummary> Generate(List<ResultSummary> rawData, string module = "",
             bool moduleinclusion = true, string tester = "", bool testerinclusion = true,
             string automationstatus = "both")
         {
@@ -44,8 +44,8 @@ namespace ReportingLayer
 
             var reportList = new List<SummaryReport>();
             var modreplist = new List<OneLineSummary>();
-            var rd = new List<resultsummary>();
-            var filtereddata = Utilities.filterdata(rawData, module, moduleinclusion, tester, testerinclusion,
+            var rd = new List<ResultSummary>();
+            var filtereddata = Utilities.FilterData(rawData, module, moduleinclusion, tester, testerinclusion,
                 automationstatus);
 
 

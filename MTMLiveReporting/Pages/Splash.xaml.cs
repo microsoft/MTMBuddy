@@ -45,7 +45,7 @@ namespace MTMLiveReporting
         private void btnProceed_OnMouseEnter(object sender, MouseEventArgs e)
         {
             Mouse.OverrideCursor = Cursors.Hand;
-            btnProceed.Opacity = 1.0;
+            BtnProceed.Opacity = 1.0;
             //ImageBrush brush = new ImageBrush();
             //brush.ImageSource = new BitmapImage(new Uri("proceed1.png", UriKind.Relative));
             //btnProceed.Background = brush;
@@ -54,7 +54,7 @@ namespace MTMLiveReporting
         private void btnProceed_OnMouseLeave(object sender, MouseEventArgs e)
         {
             Mouse.OverrideCursor = Cursors.Arrow;
-            btnProceed.Opacity = 0.7;
+            BtnProceed.Opacity = 0.7;
         }
     }
 }

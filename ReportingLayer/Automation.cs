@@ -31,19 +31,19 @@ namespace ReportingLayer
         public int Total { get; set; }
 
 
-        public static List<AutomationReport> Generate(List<resultsummary> rawData, string module = "",
+        public static List<AutomationReport> Generate(List<ResultSummary> rawData, string module = "",
             bool moduleinclusion = true, string tester = "", bool testerinclusion = true,
             string automationstatus = "both")
         {
             //rawData = rawData.OrderBy(l => l.Priority).ThenBy(l => l.Outcome).ToList();
 
             var reportList = new List<AutomationReport>();
-            var rd = new List<resultsummary>();
-            var rd1 = new List<resultsummary>();
-            var filtereddata = Utilities.filterdata(rawData, module, moduleinclusion, tester, testerinclusion,
+            var rd = new List<ResultSummary>();
+            var rd1 = new List<ResultSummary>();
+            var filtereddata = Utilities.FilterData(rawData, module, moduleinclusion, tester, testerinclusion,
                 automationstatus);
 
-            filtereddata = filtereddata.GroupBy(p => p.TcId).Select(g => g.First()).ToList();
+            filtereddata = filtereddata.GroupBy(p => p.TCID).Select(g => g.First()).ToList();
             for (var i = 1; i <= 3; i++)
             {
                 var sr = new AutomationReport();
@@ -60,7 +60,7 @@ namespace ReportingLayer
                     sr.AutomationRatio = (float) Math.Round((float) sr.Automated/(sr.Automated + sr.Manual)*100, 2);
 
 
-                    rd1 = Utilities.filterdata(rd, "Regression", true, tester, testerinclusion, automationstatus);
+                    rd1 = Utilities.FilterData(rd, "Regression", true, tester, testerinclusion, automationstatus);
                     sr.ManualRegression = rd1.Where(l => !l.AutomationStatus).Count();
                     sr.AutomatedRegression = rd1.Where(l => l.AutomationStatus).Count();
                     if (rd1.Count > 0)
@@ -68,7 +68,7 @@ namespace ReportingLayer
                             (float)
                                 Math.Round(
                                     (float) sr.AutomatedRegression/(sr.AutomatedRegression + sr.ManualRegression)*100, 2);
-                    rd1 = Utilities.filterdata(rd, "Regression", false, tester, testerinclusion, automationstatus);
+                    rd1 = Utilities.FilterData(rd, "Regression", false, tester, testerinclusion, automationstatus);
                     sr.ManualNew = rd1.Where(l => !l.AutomationStatus).Count();
                     sr.AutomationNew = rd1.Where(l => l.AutomationStatus).Count();
                     if (rd1.Count > 0)
@@ -88,7 +88,7 @@ namespace ReportingLayer
             if (sr1.Total > 0)
             {
                 sr1.AutomationRatio = (float) Math.Round((float) sr1.Automated/(sr1.Automated + sr1.Manual)*100, 2);
-                rd1 = Utilities.filterdata(filtereddata, "Regression", true, tester, testerinclusion, automationstatus);
+                rd1 = Utilities.FilterData(filtereddata, "Regression", true, tester, testerinclusion, automationstatus);
                 sr1.ManualRegression = rd1.Where(l => !l.AutomationStatus).Count();
                 sr1.AutomatedRegression = rd1.Where(l => l.AutomationStatus).Count();
                 if (rd1.Count > 0)
@@ -96,7 +96,7 @@ namespace ReportingLayer
                         (float)
                             Math.Round(
                                 (float) sr1.AutomatedRegression/(sr1.AutomatedRegression + sr1.ManualRegression)*100, 2);
-                rd1 = Utilities.filterdata(filtereddata, "Regression", false, tester, testerinclusion, automationstatus);
+                rd1 = Utilities.FilterData(filtereddata, "Regression", false, tester, testerinclusion, automationstatus);
                 sr1.ManualNew = rd1.Where(l => !l.AutomationStatus).Count();
                 sr1.AutomationNew = rd1.Where(l => l.AutomationStatus).Count();
                 if (rd1.Count > 0)

@@ -21,15 +21,15 @@ namespace ReportingLayer
 
         public float ProgressRate { get; set; }
 
-        public static List<TesterLevelReportGroup> Generate(List<resultsummary> rawData, string module = "",
+        public static List<TesterLevelReportGroup> Generate(List<ResultSummary> rawData, string module = "",
             bool moduleinclusion = true, string tester = "", bool testerinclusion = true,
             string automationstatus = "both")
         {
             //rawData = rawData.OrderBy(l => l.Priority).ThenBy(l => l.Outcome).ToList();
 
             var modreplist = new List<TesterLevelReportGroup>();
-            var rd = new List<resultsummary>();
-            var filtereddata = Utilities.filterdata(rawData, module, moduleinclusion, tester, testerinclusion,
+            var rd = new List<ResultSummary>();
+            var filtereddata = Utilities.FilterData(rawData, module, moduleinclusion, tester, testerinclusion,
                 automationstatus);
 
             //get distinct modules
@@ -41,7 +41,7 @@ namespace ReportingLayer
                 var modrep = new TesterLevelReportGroup();
                 modrep.Tester = repmodule;
                 modrep.Priority = "Total";
-                var moduledata = Utilities.filterdata(rawData, module, moduleinclusion, repmodule, true,
+                var moduledata = Utilities.FilterData(rawData, module, moduleinclusion, repmodule, true,
                     automationstatus);
                 //Overall data
                 modrep.Total = moduledata.Count;
