@@ -1,4 +1,8 @@
-﻿using System;
+﻿//------------------------------------------------------------------------------------------------------- 
+// Copyright (C) Microsoft. All rights reserved. 
+// Licensed under the MIT license. See LICENSE.txt file in the project root for full license information. 
+//------------------------------------------------------------------------------------------------------- 
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Configuration;
@@ -41,12 +45,12 @@ namespace MTMLiveReporting
             diagnostic.AppendLine("Initialize Time:   " + MTMInteraction.Initialize);
             diagnostic.AppendLine("Test Case Id Time:   " + MTMInteraction.tcidtime);
             diagnostic.AppendLine("Automation Status Time:   " + MTMInteraction.AutomationTime);
-            diagnostic.AppendLine("Plan:   " + MTMInteraction.planName);
+            diagnostic.AppendLine("Plan:   " + MTMInteraction.PlanName);
             diagnostic.AppendLine("Total count:  " + resDetail.Count() + "    Blocked Count:   " +
                                   resDetail.Where(
                                       l => l.Outcome.Equals("Blocked", StringComparison.InvariantCultureIgnoreCase))
                                       .Count());
-            diagnostic.AppendLine("Automation Test Name Time:" + MTMInteraction.AutomationTestNameFetchTime);
+         
             diagnostic.AppendLine("---------------------------------------------------");
            
             return resDetail.ToList();

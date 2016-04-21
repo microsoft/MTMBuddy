@@ -1,4 +1,8 @@
-﻿using System;
+﻿//------------------------------------------------------------------------------------------------------- 
+// Copyright (C) Microsoft. All rights reserved. 
+// Licensed under the MIT license. See LICENSE.txt file in the project root for full license information. 
+//------------------------------------------------------------------------------------------------------- 
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Windows;
@@ -386,12 +390,12 @@ namespace MTMLiveReporting.Pages
                     MTMInteraction.createPlaylist(suiteid, selectedID, fileLocation);
                     
                     DataGetter.diagnostic.AppendLine("Total time taken for playlist generation: " +
-                                                     (MTMInteraction.AutomationMethodTime1 +
+                                                     (MTMInteraction.AutomationPlaylistAddition +
                                                       MTMInteraction.AutomationMethodTime));
                     DataGetter.diagnostic.AppendLine("Time taken for playlist data fetch " +
                                                      MTMInteraction.AutomationMethodTime);
                     DataGetter.diagnostic.AppendLine("Time taken for playlist file generation: " +
-                                                     MTMInteraction.AutomationMethodTime1);
+                                                     MTMInteraction.AutomationPlaylistAddition);
                     DataGetter.diagnostic.AppendLine("---------------------------------------------------");
 
                     MessageBox.Show("Playlist generated!");

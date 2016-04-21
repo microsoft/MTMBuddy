@@ -1,4 +1,8 @@
-﻿using System.ComponentModel;
+﻿//------------------------------------------------------------------------------------------------------- 
+// Copyright (C) Microsoft. All rights reserved. 
+// Licensed under the MIT license. See LICENSE.txt file in the project root for full license information. 
+//------------------------------------------------------------------------------------------------------- 
+using System.ComponentModel;
 using System.Linq;
 using System.Windows.Media;
 using FirstFloor.ModernUI.Presentation;
@@ -14,7 +18,7 @@ namespace MTMLiveReporting.Content
         private const string FontSmall = "small";
         private const string FontLarge = "large";
 
-        // 9 accent colors from metro design principles
+        // 9 accent colors from Modern UI design principles
         /*private Color[] accentColors = new Color[]{
             Color.FromRgb(0x33, 0x99, 0xff),   // blue
             Color.FromRgb(0x00, 0xab, 0xa9),   // teal

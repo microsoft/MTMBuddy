@@ -1,39 +1,30 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
+﻿#region
+
+using System;
 using System.IO;
-using System.Linq;
 using System.Net;
-using System.Reflection;
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.RegularExpressions;
 using Microsoft.TeamFoundation.TestManagement.Client;
 using Microsoft.TeamFoundation.WorkItemTracking.Client;
+
+#endregion
 
 namespace MTMIntegration
 {
     public class AssociateTestCase
     {
-        
-       
-      
-
         #region ResultUpdate
-        
+
         private static readonly string TestPointQuery = "Select * from TestPoint where TestCaseId= '[#testcaseid#]'";
 
         private static readonly string TestPointSuiteQuery =
             "Select * from TestPoint where TestCaseId= '[#testcaseid#]' and SuiteId = '[#testsuiteid#]'";
 
-     
-        
 
         //private static ITestRun PlanRun;
 
         private static ITestCaseResult TestResult;
 
-        private static string PlanBuildNumber=string.Empty ;
+        private static readonly string PlanBuildNumber = string.Empty;
 
 
         public static string updateResult(string Tcid, string comments, string SuiteName, bool usebuildnumber,
@@ -46,7 +37,7 @@ namespace MTMIntegration
 
 
             var he = MTMInteraction.TestPlan.QueryTestPointHierarchy(TestPointQuery.Replace("[#testcaseid#]", Tcid));
-                // finds all occurences of this test case.
+            // finds all occurences of this test case.
             //foreach (HierarchyEntry a in he.Children)
             //{
             //    debug = a.SuiteTitle;
@@ -64,7 +55,7 @@ namespace MTMIntegration
             var pointCollection =
                 MTMInteraction.TestPlan.QueryTestPoints(
                     TestPointSuiteQuery.Replace("[#testcaseid#]", Tcid).Replace("[#testsuiteid#]", tsid));
-                // like "SELECT * from TestPoint where TestCaseId='185716'
+            // like "SELECT * from TestPoint where TestCaseId='185716'
             var PlanRun = MTMInteraction.TestPlan.CreateTestRun(false);
 
 
@@ -89,7 +80,7 @@ namespace MTMIntegration
                     TestResult.State = TestResultState.InProgress;
                     TestResult.Outcome = TestOutcome.None;
                 }
-                else if(result.Equals("Active",StringComparison.InvariantCultureIgnoreCase ))
+                else if (result.Equals("Active", StringComparison.InvariantCultureIgnoreCase))
                 {
                     TestResult.State = TestResultState.Completed;
                     TestResult.Outcome = TestOutcome.None;
@@ -98,8 +89,8 @@ namespace MTMIntegration
                 {
                     TestResult.State = TestResultState.Completed;
                     //TestResult.Outcome = TestOutcome.Passed;
-                    
-                    TestResult.Outcome = (TestOutcome)Enum.Parse(typeof(TestOutcome), result);
+
+                    TestResult.Outcome = (TestOutcome) Enum.Parse(typeof (TestOutcome), result);
                 }
 
                 TestResult.ComputerName = Dns.GetHostName();
@@ -199,7 +190,7 @@ namespace MTMIntegration
 
                         return temp.SuiteId;
                     }
-                        finalsuitename = branch.SuiteTitle;
+                    finalsuitename = branch.SuiteTitle;
                     return branch.SuiteId;
                 }
                 if (branch.Children.Count > 0)
@@ -216,7 +207,5 @@ namespace MTMIntegration
         }
 
         #endregion ResultUpdate
-
-       
     }
 }
