@@ -53,14 +53,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ReleaseLevelAppProgram.cs" />
-    <Compile Include="Release Level.cs" />
     <Compile Include="Automation.cs" />
     <Compile Include="QueryInterface.cs" />
     <Compile Include="TestList.cs" />
-    <Compile Include="OneLineSummary.cs" />
-    <Compile Include="TesterLevelReportgroup.cs" />
-    <Compile Include="ModuleLevelReportgroup.cs" />
     <Compile Include="TesterLevelReport.cs" />
     <Compile Include="ModuleLevelReport.cs" />
     <Compile Include="Standard Reports.cs" />

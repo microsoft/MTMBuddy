@@ -10,8 +10,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using MTMIntegration;
 using ReportingLayer;
-using WinForm = System.Windows.Forms;
-using FirstFloor.ModernUI.Windows.Navigation;
+
 
 
 namespace MTMLiveReporting.Pages
@@ -19,11 +18,11 @@ namespace MTMLiveReporting.Pages
     /// <summary>
     ///     Interaction logic for Home.xaml
     /// </summary>
-    public partial class Home : UserControl
+    public partial class Home 
     {
-        private string currentreport = string.Empty;
-        private int gridsuiteid;
-        private List<resultsummary> rawdata = new List<resultsummary>();
+        private string _currentreport = string.Empty;
+        private int _gridsuiteid;
+        private List<ResultSummary> _rawdata = new List<ResultSummary>();
 
         public Home()
         {
@@ -34,17 +33,16 @@ namespace MTMLiveReporting.Pages
                 try
             {
 
-                if (string.IsNullOrEmpty(MTMInteraction.PlanName))
+                if (string.IsNullOrEmpty(MtmInteraction.SelectedPlanName))
                 {
-                    MTMInteraction.initializeVSTFUpdate(new Uri(ConfigurationManager.AppSettings["TFSUrl"]),
+                    MtmInteraction.InitializeVstfConnection(new Uri(ConfigurationManager.AppSettings["TFSUrl"]),
                             ConfigurationManager.AppSettings["TeamProject"],
-                            int.Parse(ConfigurationManager.AppSettings["TestPlanID"]),
-                            ConfigurationManager.AppSettings["BuildNumber"]);
-                    DataGetter.diagnostic.AppendLine("TFS URL: " + ConfigurationManager.AppSettings["TFSUrl"]);
-                    DataGetter.diagnostic.AppendLine("Team Project: " + ConfigurationManager.AppSettings["TeamProject"]);
-                    DataGetter.diagnostic.AppendLine("---------------------------------------------------");
+                            int.Parse(ConfigurationManager.AppSettings["TestPlanID"]));
+                    DataGetter.Diagnostic.AppendLine("TFS URL: " + ConfigurationManager.AppSettings["TFSUrl"]);
+                    DataGetter.Diagnostic.AppendLine("Team Project: " + ConfigurationManager.AppSettings["TeamProject"]);
+                    DataGetter.Diagnostic.AppendLine("---------------------------------------------------");
                 }
-                MTMInteraction.getwpfsuitetree(int.Parse(ConfigurationManager.AppSettings["TestPlanID"]), tvMTM, true);
+                MtmInteraction.Getwpfsuitetree(int.Parse(ConfigurationManager.AppSettings["TestPlanID"]), TvMtm, true);
             }
             catch (Exception exp)
             {
@@ -52,28 +50,27 @@ namespace MTMLiveReporting.Pages
                     "It seems something has gone wrong. Please send us the below information so that we can resolve the issue." +
                     Environment.NewLine + exp.Message, "OOPS!", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
-            txtPlanId.Text = ConfigurationManager.AppSettings["TestPlanID"];
-            var reports = new List<string>();
-            reports.Add("Summary");
-            reports.Add("OneLineSummary");
-            reports.Add("Module");
-            reports.Add("Tester");
-            reports.Add("ModuleGroup");
-            reports.Add("TesterGroup");
-            reports.Add("Automation");
-            reports.Add("TestList");
-            cmbReportSelection.ItemsSource = reports;
-            cmbReportSelection.SelectedIndex = 0;
-            var AutomationStatus = new List<string>();
-            AutomationStatus.Add("Both");
-            AutomationStatus.Add("Automated");
-            AutomationStatus.Add("Manual");
-            cmbAutomationStaus.ItemsSource = AutomationStatus;
+            TxtPlanId.Text = ConfigurationManager.AppSettings["TestPlanID"];
+            List<string> reports = new List<string>
+            {
+                "Summary",
+               
+                "Module",
+                "Tester",
+                
+               
+                "Automation",
+                "TestList"
+            };
+            CmbReportSelection.ItemsSource = reports;
+            CmbReportSelection.SelectedIndex = 0;
+            List<string> automationStatus = new List<string> {"Both", "Automated", "Manual"};
+            CmbAutomationStaus.ItemsSource = automationStatus;
             int planid = 0;
             if (int.TryParse(ConfigurationManager.AppSettings["TestPlanID"], out planid))
             {
                 if(planid!=0)
-                planName.Text = MTMInteraction.getPlanName(planid);
+                PlanName.Text = MtmInteraction.GetPlanName(planid);
             }
         }
 
@@ -88,58 +85,57 @@ namespace MTMLiveReporting.Pages
             try
             {
                
-                if (ResultDataGrid.Items.Count.Equals(0) || string.IsNullOrEmpty(currentreport))
+                if (ResultDataGrid.Items.Count.Equals(0) || string.IsNullOrEmpty(_currentreport))
                 {
                     MessageBox.Show("Nothing to export.Please generate a report", "OOPS!", MessageBoxButton.OK);
                     return;
                 }
 
-                switch (currentreport.ToUpper())
+                switch (_currentreport.ToUpper())
                 {
                     case "SUMMARY":
-                        var expExlSum = new ExportToExcel<SummaryReport, List<SummaryReport>>();
-                        expExlSum.dataToExport = (List<SummaryReport>) ResultDataGrid.ItemsSource;
+                        var expExlSum = new ExportToExcel<SummaryReport>
+                        {
+                            DataToExport = (List<SummaryReport>) ResultDataGrid.ItemsSource
+                        };
                         expExlSum.GenerateExcel();
                         break;
                     case "MODULE":
-                        var expExlMod = new ExportToExcel<ModuleLevelReport, List<ModuleLevelReport>>();
-                        expExlMod.dataToExport = (List<ModuleLevelReport>) ResultDataGrid.ItemsSource;
+                        var expExlMod = new ExportToExcel<ModuleLevelReport>
+                        {
+                            DataToExport = (List<ModuleLevelReport>) ResultDataGrid.ItemsSource
+                        };
                         expExlMod.GenerateExcel();
                         break;
-                    case "ONELINESUMMARY":
-                        var expExlOLS = new ExportToExcel<OneLineSummary, List<OneLineSummary>>();
-                        expExlOLS.dataToExport = (List<OneLineSummary>) ResultDataGrid.ItemsSource;
-                        expExlOLS.GenerateExcel();
-                        break;
-                    case "MODULEGROUP":
-                        var expExlMLG = new ExportToExcel<ModuleLevelReportGroup, List<ModuleLevelReportGroup>>();
-                        expExlMLG.dataToExport = (List<ModuleLevelReportGroup>) ResultDataGrid.ItemsSource;
-                        expExlMLG.GenerateExcel();
-                        break;
-                    case "TESTERGROUP":
-                        var expExlTG = new ExportToExcel<TesterLevelReportGroup, List<TesterLevelReportGroup>>();
-                        expExlTG.dataToExport = (List<TesterLevelReportGroup>) ResultDataGrid.ItemsSource;
-                        expExlTG.GenerateExcel();
-                        break;
+                   
+                    
                     case "TESTER":
-                        var expExlTLR = new ExportToExcel<TesterLevelReport, List<TesterLevelReport>>();
-                        expExlTLR.dataToExport = (List<TesterLevelReport>) ResultDataGrid.ItemsSource;
-                        expExlTLR.GenerateExcel();
+                        var expExlTlr = new ExportToExcel<TesterLevelReport>
+                        {
+                            DataToExport = (List<TesterLevelReport>) ResultDataGrid.ItemsSource
+                        };
+                        expExlTlr.GenerateExcel();
                         break;
                   
                     case "TESTLIST":
-                        var tlist = new ExportToExcel<TestList, List<TestList>>();
-                        tlist.dataToExport = (List<TestList>) ResultDataGrid.ItemsSource;
+                        var tlist = new ExportToExcel<TestList>
+                        {
+                            DataToExport = (List<TestList>) ResultDataGrid.ItemsSource
+                        };
                         tlist.GenerateExcel();
                         break;
                     case "ISSUELIST":
-                        var ilist = new ExportToExcel<resultsummary, List<resultsummary>>();
-                        ilist.dataToExport = (List<resultsummary>) ResultDataGrid.ItemsSource;
+                        var ilist = new ExportToExcel<ResultSummary>
+                        {
+                            DataToExport = (List<ResultSummary>) ResultDataGrid.ItemsSource
+                        };
                         ilist.GenerateExcel();
                         break;
                     case "AUTOMATION":
-                        var alist = new ExportToExcel<AutomationReport, List<AutomationReport>>();
-                        alist.dataToExport = (List<AutomationReport>) ResultDataGrid.ItemsSource;
+                        var alist = new ExportToExcel<AutomationReport>
+                        {
+                            DataToExport = (List<AutomationReport>) ResultDataGrid.ItemsSource
+                        };
                         alist.GenerateExcel();
                         break;
                 }
@@ -157,25 +153,25 @@ namespace MTMLiveReporting.Pages
         {
             try
             {
-                if (tvMTM.SelectedItem == null)
+                if (TvMtm.SelectedItem == null)
                 {
                     MessageBox.Show("Please select a suite", "Error");
                     return;
                 }
 
-                var selectedItem = (TreeViewItem) tvMTM.SelectedItem;
+                var selectedItem = (TreeViewItem) TvMtm.SelectedItem;
 
 
                 var suiteid = int.Parse(selectedItem.Tag.ToString());
 
 
-                if (!gridsuiteid.Equals(suiteid))
+                if (!_gridsuiteid.Equals(suiteid))
                 {
-                    rawdata.Clear();
+                    _rawdata.Clear();
                     try
                     {
                         Mouse.OverrideCursor = Cursors.Wait;
-                        rawdata = DataGetter.GetResultSummaryList(suiteid, selectedItem.Header.ToString());
+                        _rawdata = DataGetter.GetResultSummaryList(suiteid, selectedItem.Header.ToString());
                     }
                     catch (Exception exp)
                     {
@@ -189,78 +185,64 @@ namespace MTMLiveReporting.Pages
                     {
                         Mouse.OverrideCursor = null;
                     }
-                    gridsuiteid = suiteid;
+                    _gridsuiteid = suiteid;
                 }
 
 
-                var moduleinclusion = chkModuleInclusion.IsChecked.Value;
-                var modulefilter = txtmodulefilter.Text;
-                var testerinclusion = chkTesterInclusion.IsChecked.Value;
-                var testerfilter = txttesterfilter.Text;
-                var automationstatus = cmbAutomationStaus.SelectedItem.ToString();
+                var moduleinclusion = ChkModuleInclusion.IsChecked != null && ChkModuleInclusion.IsChecked.Value;
+                var modulefilter = Txtmodulefilter.Text;
+                var testerinclusion = ChkTesterInclusion.IsChecked != null && ChkTesterInclusion.IsChecked.Value;
+                var testerfilter = Txttesterfilter.Text;
+                var automationstatus = CmbAutomationStaus.SelectedItem.ToString();
 
 
                 
 
 
-                currentreport = cmbReportSelection.SelectedItem.ToString();
-                switch (currentreport.ToUpper())
+                _currentreport = CmbReportSelection.SelectedItem.ToString();
+                switch (_currentreport.ToUpper())
                 {
                     case "SUMMARY":
-                        ResultDataGrid.ItemsSource = SummaryReport.Generate(rawdata, modulefilter, moduleinclusion,
+                        ResultDataGrid.ItemsSource = SummaryReport.Generate(_rawdata, modulefilter, moduleinclusion,
                             testerfilter, testerinclusion, automationstatus);
                        
                         break;
                     case "MODULE":
-                        ResultDataGrid.ItemsSource = ModuleLevelReport.Generate(rawdata, modulefilter, moduleinclusion,
+                        ResultDataGrid.ItemsSource = ModuleLevelReport.Generate(_rawdata, modulefilter, moduleinclusion,
                             testerfilter, testerinclusion, automationstatus);
                        
                         break;
                     case "TESTER":
-                        ResultDataGrid.ItemsSource = TesterLevelReport.Generate(rawdata, modulefilter, moduleinclusion,
+                        ResultDataGrid.ItemsSource = TesterLevelReport.Generate(_rawdata, modulefilter, moduleinclusion,
                             testerfilter, testerinclusion, automationstatus);
                        
                         break;
-                    case "MODULEGROUP":
-                        ResultDataGrid.ItemsSource = ModuleLevelReportGroup.Generate(rawdata, modulefilter,
-                            moduleinclusion, testerfilter, testerinclusion, automationstatus);
-                        
-                        break;
-                    case "TESTERGROUP":
-                        ResultDataGrid.ItemsSource = TesterLevelReportGroup.Generate(rawdata, modulefilter,
-                            moduleinclusion, testerfilter, testerinclusion, automationstatus);
-                        
-                        break;
-                    case "ONELINESUMMARY":
-                        ResultDataGrid.ItemsSource = OneLineSummary.Generate(rawdata, modulefilter, moduleinclusion,
-                            testerfilter, testerinclusion, automationstatus);
-                        
-                        break;
+                   
                     
                        
                        
                     case "TESTLIST":
-                        ResultDataGrid.ItemsSource = TestList.Generate(rawdata, modulefilter, moduleinclusion,
+                        ResultDataGrid.ItemsSource = TestList.Generate(_rawdata, modulefilter, moduleinclusion,
                             testerfilter, testerinclusion, automationstatus);
                        
                         break;
                     case "AUTOMATION":
-                        ResultDataGrid.ItemsSource = AutomationReport.Generate(rawdata, modulefilter, moduleinclusion,
+                        ResultDataGrid.ItemsSource = AutomationReport.Generate(_rawdata, modulefilter, moduleinclusion,
                             testerfilter, testerinclusion, automationstatus);
                       
                         break;
                 }
-                if (Utilities.GetIssueList(rawdata).Count > 0)
+                if (Utilities.GetIssueList(_rawdata).Count > 0)
                 {
                     MessageBox.Show(
                         "Your report is ready but we found some test cases which did not fit the report criteria. Please click on Show Issues Button for more details.");
-                    buttonIssueList.Visibility = Visibility.Visible;
+                    ButtonIssueList.Visibility = Visibility.Visible;
                     
                 }
                 else
                 {
                     MessageBox.Show("Your report is ready!");
-                    buttonIssueList.Visibility = Visibility.Hidden;
+                    ButtonIssueList.Visibility = Visibility.Hidden;
                 }
                
                
@@ -269,7 +251,7 @@ namespace MTMLiveReporting.Pages
             }
             catch (Exception exp)
             {
-                currentreport = string.Empty;
+                _currentreport = string.Empty;
                 MessageBox.Show(
                     "It seems something has gone wrong. Please send us the below information so that we can resolve the issue." +
                     Environment.NewLine + exp.Message, "OOPS!", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -282,16 +264,16 @@ namespace MTMLiveReporting.Pages
         {
             try
             {
-                var planId = int.Parse(txtPlanId.Text);
-                planName.Text = MTMInteraction.getPlanName(planId);
-                if (planName.Text == null)
+                var planId = int.Parse(TxtPlanId.Text);
+                PlanName.Text = MtmInteraction.GetPlanName(planId);
+                if (PlanName.Text == null)
                 {
                     MessageBox.Show("Invalid planId. Retry!");
                 }
-                if (int.TryParse(txtPlanId.Text, out planId))
+                if (int.TryParse(TxtPlanId.Text, out planId))
                 {
-                    tvMTM.Items.Clear();
-                    MTMInteraction.getwpfsuitetree(planId, tvMTM, true);
+                    TvMtm.Items.Clear();
+                    MtmInteraction.Getwpfsuitetree(planId, TvMtm, true);
                 }
                 else
                 {
@@ -315,38 +297,38 @@ namespace MTMLiveReporting.Pages
         {
             Mouse.OverrideCursor = Cursors.Help;
             var current = sender as Button;
-            current.Opacity = 1.0;
+            if (current != null) current.Opacity = 1.0;
         }
 
         private void btnHelp_OnMouseLeave(object sender, MouseEventArgs e)
         {
             Mouse.OverrideCursor = Cursors.Arrow;
             var current = sender as Button;
-            current.Opacity = 0.8;
+            if (current != null) current.Opacity = 0.8;
         }
 
         private void buttonIssueList_Click(object sender, RoutedEventArgs e)
         {
-            ResultDataGrid.ItemsSource = Utilities.GetIssueList(rawdata);
-            currentreport = "issuelist";
+            ResultDataGrid.ItemsSource = Utilities.GetIssueList(_rawdata);
+            _currentreport = "issuelist";
         }
 
         private void btnRefreshData_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                if (tvMTM.SelectedItem == null)
+                if (TvMtm.SelectedItem == null)
                 {
                     MessageBox.Show("Please select a suite", "Error");
                     return;
                 }
-                var selectedItem = (TreeViewItem) tvMTM.SelectedItem;
+                var selectedItem = (TreeViewItem) TvMtm.SelectedItem;
                 var suiteid = int.Parse(selectedItem.Tag.ToString());
 
-                rawdata.Clear();
+                _rawdata.Clear();
                 try
                 {
-                    rawdata = DataGetter.GetResultSummaryList(suiteid, selectedItem.Header.ToString());
+                    _rawdata = DataGetter.GetResultSummaryList(suiteid, selectedItem.Header.ToString());
                 }
                 catch (Exception exp)
                 {
@@ -356,62 +338,51 @@ namespace MTMLiveReporting.Pages
 
                     return;
                 }
-                gridsuiteid = suiteid;
+                _gridsuiteid = suiteid;
                 
-                var moduleinclusion = chkModuleInclusion.IsChecked.Value;
-                var modulefilter = txtmodulefilter.Text;
-                var testerinclusion = chkTesterInclusion.IsChecked.Value;
-                var testerfilter = txttesterfilter.Text;
-                var automationstatus = cmbAutomationStaus.SelectedItem.ToString();
-                currentreport = cmbReportSelection.SelectedItem.ToString();
-                switch (currentreport.ToUpper())
+                var moduleinclusion = ChkModuleInclusion.IsChecked != null && ChkModuleInclusion.IsChecked.Value;
+                var modulefilter = Txtmodulefilter.Text;
+                var testerinclusion = ChkTesterInclusion.IsChecked != null && ChkTesterInclusion.IsChecked.Value;
+                var testerfilter = Txttesterfilter.Text;
+                var automationstatus = CmbAutomationStaus.SelectedItem.ToString();
+                _currentreport = CmbReportSelection.SelectedItem.ToString();
+                switch (_currentreport.ToUpper())
                 {
                     case "SUMMARY":
-                        ResultDataGrid.ItemsSource = SummaryReport.Generate(rawdata, modulefilter, moduleinclusion,
+                        ResultDataGrid.ItemsSource = SummaryReport.Generate(_rawdata, modulefilter, moduleinclusion,
                             testerfilter, testerinclusion, automationstatus);
                         break;
                     case "MODULE":
-                        ResultDataGrid.ItemsSource = ModuleLevelReport.Generate(rawdata, modulefilter, moduleinclusion,
+                        ResultDataGrid.ItemsSource = ModuleLevelReport.Generate(_rawdata, modulefilter, moduleinclusion,
                             testerfilter, testerinclusion, automationstatus);
                         break;
                     case "TESTER":
-                        ResultDataGrid.ItemsSource = TesterLevelReport.Generate(rawdata, modulefilter, moduleinclusion,
+                        ResultDataGrid.ItemsSource = TesterLevelReport.Generate(_rawdata, modulefilter, moduleinclusion,
                             testerfilter, testerinclusion, automationstatus);
                         break;
-                    case "MODULEGROUP":
-                        ResultDataGrid.ItemsSource = ModuleLevelReportGroup.Generate(rawdata, modulefilter,
-                            moduleinclusion, testerfilter, testerinclusion, automationstatus);
-                        break;
-                    case "TESTERGROUP":
-                        ResultDataGrid.ItemsSource = TesterLevelReportGroup.Generate(rawdata, modulefilter,
-                            moduleinclusion, testerfilter, testerinclusion, automationstatus);
-                        break;
-                    case "ONELINESUMMARY":
-                        ResultDataGrid.ItemsSource = OneLineSummary.Generate(rawdata, modulefilter, moduleinclusion,
-                            testerfilter, testerinclusion, automationstatus);
-                        break;
+                    
                 
                     case "TESTLIST":
-                        ResultDataGrid.ItemsSource = TestList.Generate(rawdata, modulefilter, moduleinclusion,
+                        ResultDataGrid.ItemsSource = TestList.Generate(_rawdata, modulefilter, moduleinclusion,
                             testerfilter, testerinclusion, automationstatus);
                         break;
                 }
-                if (Utilities.GetIssueList(rawdata).Count > 0)
+                if (Utilities.GetIssueList(_rawdata).Count > 0)
                 {
                     MessageBox.Show(
                         "Your report is ready but we found some test cases which did not fit the report criteria. Please click on Show Issues Button for more details.");
-                    buttonIssueList.Visibility = Visibility.Visible;
+                    ButtonIssueList.Visibility = Visibility.Visible;
                 }
                 else
                 {
                     MessageBox.Show("Your report is ready!");
-                    buttonIssueList.Visibility = Visibility.Hidden;
+                    ButtonIssueList.Visibility = Visibility.Hidden;
                 }
                
             }
             catch (Exception exp)
             {
-                currentreport = string.Empty;
+                _currentreport = string.Empty;
                 MessageBox.Show(
                     "It seems something has gone wrong. Please send us the below information so that we can resolve the issue." +
                     Environment.NewLine + exp.Message, "OOPS!", MessageBoxButton.OK, MessageBoxImage.Warning);

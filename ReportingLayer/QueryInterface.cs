@@ -16,7 +16,7 @@ namespace ReportingLayer
         public int Priority { get; set; }
 
         public string Outcome { get; set; }
-        public int TCId { get; set; }
+        public int TcId { get; set; }
 
         public string Title { get; set; }
 
@@ -27,60 +27,67 @@ namespace ReportingLayer
         public string SuiteName { get; set; }
 
 
-        public static List<QueryInterface> Generate(List<resultsummary> rawData, string module = "",
+        public static List<QueryInterface> Generate(List<ResultSummary> rawData, string module = "",
             bool moduleinclusion = true, string tester = "", bool testerinclusion = true,
-            string automationstatus = "both", List<MTMInteraction.filter> FilterCriteria = null)
+            string automationstatus = "both", List<Filter> filterCriteria = null)
         {
-            var reportList = new List<QueryInterface>();
-            var rd = new List<resultsummary>();
-            var filtereddata = Utilities.filterdata(rawData, module, moduleinclusion, tester, testerinclusion,
+            var filtereddata = Utilities.FilterData(rawData, module, moduleinclusion, tester, testerinclusion,
                 automationstatus);
 
-            var QueryResult = filtereddata;
+            var queryResult = filtereddata;
 
-            foreach (var Filter in FilterCriteria)
+            if (filterCriteria == null)
+                return queryResult.Select(res => new QueryInterface
+                {
+                    AutomationStatus = res.AutomationStatus,
+                    Outcome = res.Outcome,
+                    Priority = res.Priority,
+                    SuiteName = res.SuiteName,
+                    TcId = res.TcId,
+                    Tester = res.Tester,
+                    Title = res.Title
+                }).ToList();
+            foreach (var filter in filterCriteria)
             {
-                switch (Filter.name)
+                switch (filter.Name)
                 {
                     case "Priority":
-                        var Priority = int.Parse(Filter.value);
-                        QueryResult = QueryResult.Where(p => p.Priority == Priority).ToList();
+                        var priority = int.Parse(filter.Value);
+                        queryResult = queryResult.Where(p => p.Priority == priority).ToList();
 
                         break;
                     case "Title":
-                        if (Filter.op.Equals("Contains", StringComparison.InvariantCultureIgnoreCase))
+                        if (filter.Op.Equals("Contains", StringComparison.OrdinalIgnoreCase))
                         {
-                            QueryResult =
-                                QueryResult.Where(
-                                    p => p.Title.ToLowerInvariant().Contains(Filter.value.ToLowerInvariant())).ToList();
+                            queryResult =
+                                queryResult.Where(
+                                    p => p.Title.ToLowerInvariant().Contains(filter.Value.ToLowerInvariant())).ToList();
                         }
-                        else if (Filter.op.Equals("Not Contains", StringComparison.InvariantCultureIgnoreCase))
+                        else if (filter.Op.Equals("Not Contains", StringComparison.OrdinalIgnoreCase))
                         {
-                            QueryResult = QueryResult.Where(p => !p.Title.Contains(Filter.value)).ToList();
+                            queryResult = queryResult.Where(p => !p.Title.Contains(filter.Value)).ToList();
                         }
                         break;
                     case "Outcome":
-                        QueryResult =
-                            QueryResult.Where(
-                                p => p.Outcome.Equals(Filter.value, StringComparison.InvariantCultureIgnoreCase))
+                        queryResult =
+                            queryResult.Where(
+                                p => p.Outcome.Equals(filter.Value, StringComparison.OrdinalIgnoreCase))
                                 .ToList();
                         break;
                 }
             }
 
-            foreach (var res in QueryResult)
+            return queryResult.Select(res => new QueryInterface
             {
-                var tlitem = new QueryInterface();
-                tlitem.AutomationStatus = res.AutomationStatus;
-                tlitem.Outcome = res.Outcome;
-                tlitem.Priority = res.Priority;
-                tlitem.SuiteName = res.SuiteName;
-                tlitem.TCId = res.TcId;
-                tlitem.Tester = res.Tester;
-                tlitem.Title = res.Title;
-                reportList.Add(tlitem);
-            }
-            return reportList;
+                AutomationStatus = res.AutomationStatus, Outcome = res.Outcome, Priority = res.Priority, SuiteName = res.SuiteName, TcId = res.TcId, Tester = res.Tester, Title = res.Title
+            }).ToList();
         }
+    }
+
+    public class Filter
+    {
+        public string Name { get; set; }
+        public string Op { get; set; }
+        public string Value { get; set; }
     }
 }

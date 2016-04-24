@@ -5,31 +5,31 @@
 using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using Microsoft.Win32;
 using MTMIntegration;
 using ReportingLayer;
-using Application = Microsoft.Office.Interop.Excel.Application;
-using WinForm = System.Windows.Forms;
+
 
 namespace MTMLiveReporting.Pages
 {
     /// <summary>
     ///     Interaction logic for Query_Filter.xaml
     /// </summary>
-    public partial class Query_Filter : UserControl
+    public partial class QueryFilter 
     {
-        private int planId;
+        private int _planId;
 
-        private List<QueryInterface> QueryResult = new List<QueryInterface>();
-        private List<resultsummary> rawdata = new List<resultsummary>();
+        private List<QueryInterface> _queryResult = new List<QueryInterface>();
+        private List<ResultSummary> _rawdata = new List<ResultSummary>();
 
-        private int suiteid;
+        private int _suiteid;
 
 
-        public Query_Filter()
+        public QueryFilter()
         {
             DataContext = this;
 
@@ -37,50 +37,33 @@ namespace MTMLiveReporting.Pages
 
             try
             {
-                var Actions = new List<string>();
-                Actions.Add("Assign Tester");
-                Actions.Add("Playlist");
-                Actions.Add("Result Update");
+                var actions = new List<string> {"Assign Tester", "Playlist", "Result Update"};
 
-                testerAction.ItemsSource = Actions;
+                TesterAction.ItemsSource = actions;
 
 
-                testerAction.SelectedIndex = 0;
-                var AutomationStatus = new List<string>();
-                AutomationStatus.Add("Both");
-                AutomationStatus.Add("Automated");
-                AutomationStatus.Add("Manual");
-                cmbAutomationStaus.ItemsSource = AutomationStatus;
-                var Priorities = new List<string>();
-                Priorities.Add("All");
-                Priorities.Add("1");
-                Priorities.Add("2");
-                Priorities.Add("3");
-                Priorities.Add("4");
-                cmbPriority.ItemsSource = Priorities;
-                var Outcomes = new List<string>();
-                Outcomes.Add("All");
-                Outcomes.Add("Active");
-                Outcomes.Add("Blocked");
-                Outcomes.Add("Failed");
-                Outcomes.Add("Passed");
-                Outcomes.Add("In progress");
-                cmbOutcome.ItemsSource = Outcomes;
+                TesterAction.SelectedIndex = 0;
+                var automationStatus = new List<string> {"Both", "Automated", "Manual"};
+                CmbAutomationStaus.ItemsSource = automationStatus;
+                var priorities = new List<string> {"All", "1", "2", "3", "4"};
+                CmbPriority.ItemsSource = priorities;
+                var outcomes = new List<string> {"All", "Active", "Blocked", "Failed", "Passed", "In progress"};
+                CmbOutcome.ItemsSource = outcomes;
 
-                var validOutcomes = Outcomes;
+                //Valid Outcomes are used for result update.
+                var validOutcomes = outcomes;
 
                 validOutcomes.Remove("All");
-                resultoptions.ItemsSource = validOutcomes;
+                Resultoptions.ItemsSource = validOutcomes;
                
                 
                 
               
-                MTMInteraction.getwpfsuitetree(int.Parse(ConfigurationManager.AppSettings["TestPlanID"]), tvMTM, true);
-                var tester = new List<string>();
-                tester = MTMInteraction.getTester();
+                MtmInteraction.Getwpfsuitetree(int.Parse(ConfigurationManager.AppSettings["TestPlanID"]), TvMtm, true);
+                var tester = MtmInteraction.GetTester();
                
                 tester.Sort();
-                testerName.ItemsSource = tester;
+                TesterName.ItemsSource = tester;
 
             }
             catch (Exception exp)
@@ -89,24 +72,22 @@ namespace MTMLiveReporting.Pages
                     "It seems something has gone wrong. Please send us the below information so that we can resolve the issue." +
                     Environment.NewLine + exp.Message, "OOPS!", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
-            txtPlanId.Text = ConfigurationManager.AppSettings["TestPlanID"];
+            TxtPlanId.Text = ConfigurationManager.AppSettings["TestPlanID"];
         }
 
 
-        public void getlist_Click(object sender, RoutedEventArgs e)
+        public void GetPlanDetails_Click(object sender, RoutedEventArgs e)
         {
             try {
-                var plans = new Dictionary<int, string>();
-                plans = MTMInteraction.getPlanId();
+                
 
-                if (int.TryParse(txtPlanId.Text, out planId))
+                if (int.TryParse(TxtPlanId.Text, out _planId))
                 {
-                    tvMTM.Items.Clear();
-                    MTMInteraction.getwpfsuitetree(planId, tvMTM, true);
-                    var tester = new List<string>();
-                    tester = MTMInteraction.getTester();
+                    TvMtm.Items.Clear();
+                    MtmInteraction.Getwpfsuitetree(_planId, TvMtm, true);
+                    var tester = MtmInteraction.GetTester();
                     tester.Sort();
-                    testerName.ItemsSource = tester;
+                    TesterName.ItemsSource = tester;
                 }
 
                 else
@@ -120,23 +101,23 @@ namespace MTMLiveReporting.Pages
                 MessageBox.Show(
                     "It seems something has gone wrong. Please send us the below information so that we can resolve the issue." +
                     Environment.NewLine + exp.Message, "OOPS!", MessageBoxButton.OK, MessageBoxImage.Warning);
-                DataGetter.diagnostic.AppendLine("Error while exporting to Excel: " + exp.Message);
+                DataGetter.Diagnostic.AppendLine("Error while exporting to Excel: " + exp.Message);
             }
 }
 
       
-        public void getFilter_Click(object sender, RoutedEventArgs e)
+        public void getResults_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                var selectedItem = (TreeViewItem) tvMTM.SelectedItem;
-                if (suiteid != int.Parse(selectedItem.Tag.ToString()))
-                {
-                    suiteid = int.Parse(selectedItem.Tag.ToString());
+                //Get data for the selected suite
+                var selectedItem = (TreeViewItem) TvMtm.SelectedItem;
+               
+                    _suiteid = int.Parse(selectedItem.Tag.ToString());
                     try
                     {
                         Mouse.OverrideCursor = Cursors.Wait;
-                        rawdata = DataGetter.GetResultSummaryList(suiteid, selectedItem.Header.ToString());
+                        _rawdata = DataGetter.GetResultSummaryList(_suiteid, selectedItem.Header.ToString());
                     }
                     catch (Exception exp)
                     {
@@ -150,54 +131,50 @@ namespace MTMLiveReporting.Pages
                     {
                         Mouse.OverrideCursor = null;
                     }
-                }
-                var Filters = new List<MTMInteraction.filter>();
+                //Add Filters
+                var filters = new List<Filter>();
 
-                var moduleinclusion = chkModuleInclusion.IsChecked.Value;
-                var modulefilter = txtmodulefilter.Text;
-                var testerinclusion = chkTesterInclusion.IsChecked.Value;
-                var testerfilter = txttesterfilter.Text;
-                var automationstatus = cmbAutomationStaus.SelectedItem.ToString();
-                if (!string.IsNullOrEmpty(txtTitlefilter.Text))
+                var moduleinclusion = ChkModuleInclusion.IsChecked != null && ChkModuleInclusion.IsChecked.Value;
+                var modulefilter = Txtmodulefilter.Text;
+                var testerinclusion = ChkTesterInclusion.IsChecked != null && ChkTesterInclusion.IsChecked.Value;
+                var testerfilter = Txttesterfilter.Text;
+                var automationstatus = CmbAutomationStaus.SelectedItem.ToString();
+                if (!string.IsNullOrEmpty(TxtTitlefilter.Text))
                 {
                     
-                    var TitleFilter = new MTMInteraction.filter();
-                    if (chkTitleInclusion.IsChecked.Value)
+                    var titleFilter = new Filter();
+                    if (ChkTitleInclusion.IsChecked != null && ChkTitleInclusion.IsChecked.Value)
                     {
-                        TitleFilter.op = "Contains";
+                        titleFilter.Op = "Contains";
                     }
                     else
                     {
-                        TitleFilter.op = "Not Contains";
+                        titleFilter.Op = "Not Contains";
                     }
-                    TitleFilter.name = "Title";
-                    TitleFilter.value = txtTitlefilter.Text;
-                    Filters.Add(TitleFilter);
+                    titleFilter.Name = "Title";
+                    titleFilter.Value = TxtTitlefilter.Text;
+                    filters.Add(titleFilter);
                 }
-                if (!cmbPriority.SelectedValue.ToString().Equals("All", StringComparison.InvariantCultureIgnoreCase))
+                if (!CmbPriority.SelectedValue.ToString().Equals("All", StringComparison.InvariantCultureIgnoreCase))
                 {
-                   
-                    var TitleFilter = new MTMInteraction.filter();
-                    
-                    TitleFilter.name = "Priority";
-                    TitleFilter.value = cmbPriority.SelectedValue.ToString();
-                    Filters.Add(TitleFilter);
-                }
-                if (!cmbOutcome.SelectedValue.ToString().Equals("All", StringComparison.InvariantCultureIgnoreCase))
-                {
-                    
-                    var TitleFilter = new MTMInteraction.filter();
 
-                    TitleFilter.name = "Outcome";
-                    TitleFilter.value = cmbOutcome.SelectedValue.ToString();
-                    Filters.Add(TitleFilter);
+                    var titleFilter = new Filter {Name = "Priority", Value = CmbPriority.SelectedValue.ToString()};
+
+                    filters.Add(titleFilter);
+                }
+                if (!CmbOutcome.SelectedValue.ToString().Equals("All", StringComparison.InvariantCultureIgnoreCase))
+                {
+
+                    var titleFilter = new Filter {Name = "Outcome", Value = CmbOutcome.SelectedValue.ToString()};
+
+                    filters.Add(titleFilter);
                 }
 
-                QueryResult = QueryInterface.Generate(rawdata, modulefilter, moduleinclusion, testerfilter,
-                    testerinclusion, automationstatus, Filters);
-                    ResultDataGrid.ItemsSource = QueryResult;
+                _queryResult = QueryInterface.Generate(_rawdata, modulefilter, moduleinclusion, testerfilter,
+                    testerinclusion, automationstatus, filters);
+                    ResultDataGrid.ItemsSource = _queryResult;
                    
-                MessageBox.Show("All done. Found " + QueryResult.Count + " Cases");
+                MessageBox.Show("All done. Found " + _queryResult.Count + " Cases");
             }
             catch (Exception exp)
             {
@@ -209,28 +186,21 @@ namespace MTMLiveReporting.Pages
             finally
             {
                 Mouse.OverrideCursor = null;
-                ;
+                
             }
         }
 
         private void Assign_Tester()
         {
             try {
-                var name = testerName.SelectedItem.ToString();
-                var selectedID = new List<int>();
-                foreach (var i in QueryResult)
-                {
-                    if (i.Selected)
-                    {
-                        selectedID.Add(i.TCId);
-                    }
-                }
-                if (selectedID.Count == 0)
+                var name = TesterName.Text;
+                var selectedId = (from i in _queryResult where i.Selected select i.TcId).ToList();
+                if (selectedId.Count == 0)
                 {
                     MessageBox.Show("Hey! It seems you forgot to select cases");
                     return;
                 }
-                MTMInteraction.assignTester(suiteid, selectedID, name);
+                MtmInteraction.AssignTester(_suiteid, selectedId, name);
                
                 MessageBox.Show("All changes done!");
             }
@@ -239,15 +209,15 @@ namespace MTMLiveReporting.Pages
                 MessageBox.Show(
                     "It seems something has gone wrong. Please send us the below information so that we can resolve the issue." +
                     Environment.NewLine + exp.Message, "OOPS!", MessageBoxButton.OK, MessageBoxImage.Warning);
-                DataGetter.diagnostic.AppendLine("Error while exporting to Excel: " + exp.Message);
+                DataGetter.Diagnostic.AppendLine("Error while Assigning Testers: " + exp.Message);
             }
         }
         
 
-        private void Hyperlink_Click(object sender, RoutedEventArgs e)
+        private void SelectAll_Click(object sender, RoutedEventArgs e)
         {
             try {
-                foreach (var i in QueryResult)
+                foreach (var i in _queryResult)
                 {
                     i.Selected = true;
                 }
@@ -260,7 +230,7 @@ namespace MTMLiveReporting.Pages
                 MessageBox.Show(
                     "It seems something has gone wrong. Please send us the below information so that we can resolve the issue." +
                     Environment.NewLine + exp.Message, "OOPS!", MessageBoxButton.OK, MessageBoxImage.Warning);
-                DataGetter.diagnostic.AppendLine("Error while exporting to Excel: " + exp.Message);
+                DataGetter.Diagnostic.AppendLine("Select All: " + exp.Message);
             }
 }
 
@@ -271,44 +241,34 @@ namespace MTMLiveReporting.Pages
                 //string name = testerName.SelectedItem.ToString();
                 Mouse.OverrideCursor = Cursors.Wait;
                 var errflag = false;
-                foreach (var i in QueryResult)
+                foreach (var i in _queryResult.Where(i => i.Selected))
                 {
-                    if (i.Selected)
+                    try
                     {
-                        try
-                        {
-                            AssociateTestCase.updateResult(i.TCId.ToString(), "Updated from MTM Buddy",
-                                i.SuiteName.Substring(i.SuiteName.LastIndexOf("\\") + 1), false,
-                                resultoptions.SelectedValue.ToString());
-                        }
-                        catch (Exception ex)
-                        {
-                            DataGetter.diagnostic.AppendLine("Error occured in migrating testcase " + i.TCId);
-                            DataGetter.diagnostic.AppendLine(ex.Message);
-                            DataGetter.diagnostic.AppendLine("---------------------------------------------------");
-                            errflag = true;
+                        MtmInteraction.UpdateResult(i.TcId.ToString(), "Updated from MTM Buddy",
+                            i.SuiteName.Substring(i.SuiteName.LastIndexOf("\\",StringComparison.OrdinalIgnoreCase ) + 1), false,
+                            Resultoptions.SelectedValue.ToString());
+                    }
+                    catch (Exception ex)
+                    {
+                        DataGetter.Diagnostic.AppendLine("Error occured in updating results " + i.TcId);
+                        DataGetter.Diagnostic.AppendLine(ex.Message);
+                        DataGetter.Diagnostic.AppendLine("---------------------------------------------------");
+                        errflag = true;
                         
-                        }
                     }
                 }
-                if (errflag)
-                {
-                    MessageBox.Show("Sorry! Something went wrong. Please check the diagnostic log for details.");
-                }
-                else
-                {
-                    MessageBox.Show("All done");
-                }
-
-                
+                MessageBox.Show(errflag
+                    ? "Sorry! Something went wrong. Please check the diagnostic log for details."
+                    : "All done");
             }
             catch (Exception ex)
             {
                 MessageBox.Show("Sorry! Something went wrong. Please send the diagnostic log to us.");
                
-                DataGetter.diagnostic.AppendLine("Error occured in migrating testcases.");
-                DataGetter.diagnostic.AppendLine(ex.Message);
-                DataGetter.diagnostic.AppendLine("---------------------------------------------------");
+                DataGetter.Diagnostic.AppendLine("Error occured in updating results.");
+                DataGetter.Diagnostic.AppendLine(ex.Message);
+                DataGetter.Diagnostic.AppendLine("---------------------------------------------------");
                 
             }
             finally
@@ -320,24 +280,24 @@ namespace MTMLiveReporting.Pages
 
         
 
-        private void Button_Click(object sender, RoutedEventArgs e)
+        private void ActionButton_Click(object sender, RoutedEventArgs e)
         {
             try { 
             Mouse.OverrideCursor = Cursors.Wait;
-            if (testerAction.SelectedItem.ToString()
+            if (TesterAction.SelectedItem.ToString()
                 .Equals("Assign Tester", StringComparison.InvariantCultureIgnoreCase))
             {
                 Assign_Tester();
             }
 
-            else if (testerAction.SelectedItem.ToString().Equals("Playlist", StringComparison.InvariantCultureIgnoreCase))
+            else if (TesterAction.SelectedItem.ToString().Equals("Playlist", StringComparison.InvariantCultureIgnoreCase))
             {
                 Create_Playlist();
             }
 
            
 
-            else if (testerAction.SelectedItem.ToString()
+            else if (TesterAction.SelectedItem.ToString()
                 .Equals("Result Update", StringComparison.InvariantCultureIgnoreCase))
             {
                 Updateresults();
@@ -351,7 +311,7 @@ namespace MTMLiveReporting.Pages
                 MessageBox.Show(
                     "It seems something has gone wrong. Please send us the below information so that we can resolve the issue." +
                     Environment.NewLine + exp.Message, "OOPS!", MessageBoxButton.OK, MessageBoxImage.Warning);
-                DataGetter.diagnostic.AppendLine("Error while exporting to Excel: " + exp.Message);
+                DataGetter.Diagnostic.AppendLine("Error while "+TesterAction.SelectedItem+": " + exp.Message);
             }
         }
 
@@ -360,43 +320,39 @@ namespace MTMLiveReporting.Pages
             try
             {
                 //string name = testerName.SelectedItem.ToString();
-                var selectedID = new List<int>();
-                foreach (var i in QueryResult)
-                {
-                    if (i.Selected && i.AutomationStatus)
-                    {
-                        selectedID.Add(i.TCId);
-                    }
-                }
+                var selectedId = (from i in _queryResult where i.Selected && i.AutomationStatus select i.TcId).ToList();
 
-                if (selectedID.Count == 0)
+                if (selectedId.Count == 0)
                 {
                     MessageBox.Show("Hey! It seems there are no automated cases here to generate the playlist");
                     return;
                 }
 
-                var dlg = new SaveFileDialog();
-                dlg.FileName = "Playlist1"; // Default file name
-                dlg.DefaultExt = ".playlist"; // Default file extension
-                dlg.Filter = "Playlist (.playlist)|*.playlist"; // Filter files by extension
+                var dlg = new SaveFileDialog
+                {
+                    FileName = "Playlist1",
+                    DefaultExt = ".playlist",
+                    Filter = "Playlist (.playlist)|*.playlist"
+                };
+               
 
                 var result = dlg.ShowDialog();
-                var fileLocation = "";
+              
                 if (result == true)
                 {
-                    fileLocation = dlg.FileName;
-                    filePath.Text = fileLocation;
+                    var fileLocation = dlg.FileName;
+                    FilePath.Text = fileLocation;
                     Mouse.OverrideCursor = Cursors.Wait;
-                    MTMInteraction.createPlaylist(suiteid, selectedID, fileLocation);
+                    MtmInteraction.CreatePlaylist( selectedId, fileLocation);
                     
-                    DataGetter.diagnostic.AppendLine("Total time taken for playlist generation: " +
-                                                     (MTMInteraction.AutomationPlaylistAddition +
-                                                      MTMInteraction.AutomationMethodTime));
-                    DataGetter.diagnostic.AppendLine("Time taken for playlist data fetch " +
-                                                     MTMInteraction.AutomationMethodTime);
-                    DataGetter.diagnostic.AppendLine("Time taken for playlist file generation: " +
-                                                     MTMInteraction.AutomationPlaylistAddition);
-                    DataGetter.diagnostic.AppendLine("---------------------------------------------------");
+                    DataGetter.Diagnostic.AppendLine("Total time taken for playlist generation: " +
+                                                     (MtmInteraction.AutomationPlaylistAddition +
+                                                      MtmInteraction.AutomationMethodTime));
+                    DataGetter.Diagnostic.AppendLine("Time taken for playlist data fetch " +
+                                                     MtmInteraction.AutomationMethodTime);
+                    DataGetter.Diagnostic.AppendLine("Time taken for playlist file generation: " +
+                                                     MtmInteraction.AutomationPlaylistAddition);
+                    DataGetter.Diagnostic.AppendLine("---------------------------------------------------");
 
                     MessageBox.Show("Playlist generated!");
                 }              
@@ -404,9 +360,9 @@ namespace MTMLiveReporting.Pages
             catch (Exception ex)
             {
                 MessageBox.Show("Sorry! Something went wrong. Please send the diagnostic log to us.");
-                DataGetter.diagnostic.AppendLine("Error occured in generating playlist."); 
-                DataGetter.diagnostic.AppendLine(ex.Message);
-                DataGetter.diagnostic.AppendLine("---------------------------------------------------");
+                DataGetter.Diagnostic.AppendLine("Error occured in generating playlist."); 
+                DataGetter.Diagnostic.AppendLine(ex.Message);
+                DataGetter.Diagnostic.AppendLine("---------------------------------------------------");
                 
             }
             finally
@@ -417,42 +373,42 @@ namespace MTMLiveReporting.Pages
 
         private void testerAction_SelectionChanged_1(object sender, SelectionChangedEventArgs e)
         {
-            if (testerAction.SelectedItem.ToString()
+            if (TesterAction.SelectedItem.ToString()
                 .Equals("Assign Tester", StringComparison.InvariantCultureIgnoreCase))
             {
-                testerName.Visibility = Visibility.Visible;
-                lblActionParam.Visibility = Visibility.Visible;
+                TesterName.Visibility = Visibility.Visible;
+                LblActionParam.Visibility = Visibility.Visible;
                 
-                resultoptions.Visibility = Visibility.Hidden;
-                testActionsoptions.Visibility = Visibility.Hidden;
-                //filePath.Visibility =  System.Windows.Visibility.Hidden;
-                actionButton.Content = "Assign";
+                Resultoptions.Visibility = Visibility.Hidden;
+                TestActionsoptions.Visibility = Visibility.Hidden;
+                
+                ActionButton.Content = "Assign";
             }
-            else if (testerAction.SelectedItem.ToString().Equals("Playlist", StringComparison.InvariantCultureIgnoreCase))
+            else if (TesterAction.SelectedItem.ToString().Equals("Playlist", StringComparison.InvariantCultureIgnoreCase))
             {
-                testerName.Visibility = Visibility.Hidden;
-                lblActionParam.Visibility = Visibility.Hidden;
+                TesterName.Visibility = Visibility.Hidden;
+                LblActionParam.Visibility = Visibility.Hidden;
                
-                resultoptions.Visibility = Visibility.Hidden;
-                testActionsoptions.Visibility = Visibility.Hidden;
-                //filePath.Visibility = System.Windows.Visibility.Visible;
-                actionButton.Content = "Generate";
+                Resultoptions.Visibility = Visibility.Hidden;
+                TestActionsoptions.Visibility = Visibility.Hidden;
+              
+                ActionButton.Content = "Generate";
             }
            
-            else if (testerAction.SelectedItem.ToString()
+            else if (TesterAction.SelectedItem.ToString()
                 .Equals("Result Update", StringComparison.InvariantCultureIgnoreCase))
             {
-                testerName.Visibility = Visibility.Hidden;
-                lblActionParam.Visibility = Visibility.Visible ;
-                lblActionParam.Text = "Outcome";
-                resultoptions.Visibility = Visibility.Visible;
-                testActionsoptions.Visibility = Visibility.Hidden;
-                actionButton.Content = "Update";
+                TesterName.Visibility = Visibility.Hidden;
+                LblActionParam.Visibility = Visibility.Visible ;
+                LblActionParam.Text = "Outcome";
+                Resultoptions.Visibility = Visibility.Visible;
+                TestActionsoptions.Visibility = Visibility.Hidden;
+                ActionButton.Content = "Update";
             }
            
         }
 
-        private void Hyperlink_Click_1(object sender, RoutedEventArgs e)
+        private void ExportToExcel_Click(object sender, RoutedEventArgs e)
         {
 
             try
@@ -462,8 +418,10 @@ namespace MTMLiveReporting.Pages
                     MessageBox.Show("Nothing to export.Please generate a report", "OOPS!", MessageBoxButton.OK);
                     return;
                 }
-                var expExlSum = new ExportToExcel<QueryInterface, List<QueryInterface>>();
-                expExlSum.dataToExport = (List<QueryInterface>)ResultDataGrid.ItemsSource;
+                var expExlSum = new ExportToExcel<QueryInterface>
+                {
+                    DataToExport = (List<QueryInterface>) ResultDataGrid.ItemsSource
+                };
                 expExlSum.GenerateExcel();
             }
             catch (Exception exp)
@@ -471,7 +429,7 @@ namespace MTMLiveReporting.Pages
                 MessageBox.Show(
                     "It seems something has gone wrong. Please send us the below information so that we can resolve the issue." +
                     Environment.NewLine + exp.Message, "OOPS!", MessageBoxButton.OK, MessageBoxImage.Warning);
-                DataGetter.diagnostic.AppendLine("Error while exporting to Excel: " + exp.Message);
+                DataGetter.Diagnostic.AppendLine("Error while exporting to Excel: " + exp.Message);
             }
         }
     }
