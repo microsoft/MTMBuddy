@@ -10,8 +10,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using MTMIntegration;
 using ReportingLayer;
-using WinForm = System.Windows.Forms;
-using FirstFloor.ModernUI.Windows.Navigation;
+
 
 
 namespace MTMLiveReporting.Pages
@@ -19,7 +18,7 @@ namespace MTMLiveReporting.Pages
     /// <summary>
     ///     Interaction logic for Home.xaml
     /// </summary>
-    public partial class Home : UserControl
+    public partial class Home 
     {
         private string _currentreport = string.Empty;
         private int _gridsuiteid;
@@ -36,7 +35,7 @@ namespace MTMLiveReporting.Pages
 
                 if (string.IsNullOrEmpty(MtmInteraction.SelectedPlanName))
                 {
-                    MtmInteraction.Initialize_VSTF(new Uri(ConfigurationManager.AppSettings["TFSUrl"]),
+                    MtmInteraction.InitializeVstfConnection(new Uri(ConfigurationManager.AppSettings["TFSUrl"]),
                             ConfigurationManager.AppSettings["TeamProject"],
                             int.Parse(ConfigurationManager.AppSettings["TestPlanID"]));
                     DataGetter.Diagnostic.AppendLine("TFS URL: " + ConfigurationManager.AppSettings["TFSUrl"]);
@@ -52,21 +51,20 @@ namespace MTMLiveReporting.Pages
                     Environment.NewLine + exp.Message, "OOPS!", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
             TxtPlanId.Text = ConfigurationManager.AppSettings["TestPlanID"];
-            var reports = new List<string>();
-            reports.Add("Summary");
-            reports.Add("OneLineSummary");
-            reports.Add("Module");
-            reports.Add("Tester");
-            reports.Add("ModuleGroup");
-            reports.Add("TesterGroup");
-            reports.Add("Automation");
-            reports.Add("TestList");
+            List<string> reports = new List<string>
+            {
+                "Summary",
+               
+                "Module",
+                "Tester",
+                
+               
+                "Automation",
+                "TestList"
+            };
             CmbReportSelection.ItemsSource = reports;
             CmbReportSelection.SelectedIndex = 0;
-            var automationStatus = new List<string>();
-            automationStatus.Add("Both");
-            automationStatus.Add("Automated");
-            automationStatus.Add("Manual");
+            List<string> automationStatus = new List<string> {"Both", "Automated", "Manual"};
             CmbAutomationStaus.ItemsSource = automationStatus;
             int planid = 0;
             if (int.TryParse(ConfigurationManager.AppSettings["TestPlanID"], out planid))
@@ -96,49 +94,48 @@ namespace MTMLiveReporting.Pages
                 switch (_currentreport.ToUpper())
                 {
                     case "SUMMARY":
-                        var expExlSum = new ExportToExcel<SummaryReport, List<SummaryReport>>();
-                        expExlSum.DataToExport = (List<SummaryReport>) ResultDataGrid.ItemsSource;
+                        var expExlSum = new ExportToExcel<SummaryReport>
+                        {
+                            DataToExport = (List<SummaryReport>) ResultDataGrid.ItemsSource
+                        };
                         expExlSum.GenerateExcel();
                         break;
                     case "MODULE":
-                        var expExlMod = new ExportToExcel<ModuleLevelReport, List<ModuleLevelReport>>();
-                        expExlMod.DataToExport = (List<ModuleLevelReport>) ResultDataGrid.ItemsSource;
+                        var expExlMod = new ExportToExcel<ModuleLevelReport>
+                        {
+                            DataToExport = (List<ModuleLevelReport>) ResultDataGrid.ItemsSource
+                        };
                         expExlMod.GenerateExcel();
                         break;
-                    case "ONELINESUMMARY":
-                        var expExlOls = new ExportToExcel<OneLineSummary, List<OneLineSummary>>();
-                        expExlOls.DataToExport = (List<OneLineSummary>) ResultDataGrid.ItemsSource;
-                        expExlOls.GenerateExcel();
-                        break;
-                    case "MODULEGROUP":
-                        var expExlMlg = new ExportToExcel<ModuleLevelReportGroup, List<ModuleLevelReportGroup>>();
-                        expExlMlg.DataToExport = (List<ModuleLevelReportGroup>) ResultDataGrid.ItemsSource;
-                        expExlMlg.GenerateExcel();
-                        break;
-                    case "TESTERGROUP":
-                        var expExlTg = new ExportToExcel<TesterLevelReportGroup, List<TesterLevelReportGroup>>();
-                        expExlTg.DataToExport = (List<TesterLevelReportGroup>) ResultDataGrid.ItemsSource;
-                        expExlTg.GenerateExcel();
-                        break;
+                   
+                    
                     case "TESTER":
-                        var expExlTlr = new ExportToExcel<TesterLevelReport, List<TesterLevelReport>>();
-                        expExlTlr.DataToExport = (List<TesterLevelReport>) ResultDataGrid.ItemsSource;
+                        var expExlTlr = new ExportToExcel<TesterLevelReport>
+                        {
+                            DataToExport = (List<TesterLevelReport>) ResultDataGrid.ItemsSource
+                        };
                         expExlTlr.GenerateExcel();
                         break;
                   
                     case "TESTLIST":
-                        var tlist = new ExportToExcel<TestList, List<TestList>>();
-                        tlist.DataToExport = (List<TestList>) ResultDataGrid.ItemsSource;
+                        var tlist = new ExportToExcel<TestList>
+                        {
+                            DataToExport = (List<TestList>) ResultDataGrid.ItemsSource
+                        };
                         tlist.GenerateExcel();
                         break;
                     case "ISSUELIST":
-                        var ilist = new ExportToExcel<ResultSummary, List<ResultSummary>>();
-                        ilist.DataToExport = (List<ResultSummary>) ResultDataGrid.ItemsSource;
+                        var ilist = new ExportToExcel<ResultSummary>
+                        {
+                            DataToExport = (List<ResultSummary>) ResultDataGrid.ItemsSource
+                        };
                         ilist.GenerateExcel();
                         break;
                     case "AUTOMATION":
-                        var alist = new ExportToExcel<AutomationReport, List<AutomationReport>>();
-                        alist.DataToExport = (List<AutomationReport>) ResultDataGrid.ItemsSource;
+                        var alist = new ExportToExcel<AutomationReport>
+                        {
+                            DataToExport = (List<AutomationReport>) ResultDataGrid.ItemsSource
+                        };
                         alist.GenerateExcel();
                         break;
                 }
@@ -192,9 +189,9 @@ namespace MTMLiveReporting.Pages
                 }
 
 
-                var moduleinclusion = ChkModuleInclusion.IsChecked.Value;
+                var moduleinclusion = ChkModuleInclusion.IsChecked != null && ChkModuleInclusion.IsChecked.Value;
                 var modulefilter = Txtmodulefilter.Text;
-                var testerinclusion = ChkTesterInclusion.IsChecked.Value;
+                var testerinclusion = ChkTesterInclusion.IsChecked != null && ChkTesterInclusion.IsChecked.Value;
                 var testerfilter = Txttesterfilter.Text;
                 var automationstatus = CmbAutomationStaus.SelectedItem.ToString();
 
@@ -220,21 +217,7 @@ namespace MTMLiveReporting.Pages
                             testerfilter, testerinclusion, automationstatus);
                        
                         break;
-                    case "MODULEGROUP":
-                        ResultDataGrid.ItemsSource = ModuleLevelReportGroup.Generate(_rawdata, modulefilter,
-                            moduleinclusion, testerfilter, testerinclusion, automationstatus);
-                        
-                        break;
-                    case "TESTERGROUP":
-                        ResultDataGrid.ItemsSource = TesterLevelReportGroup.Generate(_rawdata, modulefilter,
-                            moduleinclusion, testerfilter, testerinclusion, automationstatus);
-                        
-                        break;
-                    case "ONELINESUMMARY":
-                        ResultDataGrid.ItemsSource = OneLineSummary.Generate(_rawdata, modulefilter, moduleinclusion,
-                            testerfilter, testerinclusion, automationstatus);
-                        
-                        break;
+                   
                     
                        
                        
@@ -314,14 +297,14 @@ namespace MTMLiveReporting.Pages
         {
             Mouse.OverrideCursor = Cursors.Help;
             var current = sender as Button;
-            current.Opacity = 1.0;
+            if (current != null) current.Opacity = 1.0;
         }
 
         private void btnHelp_OnMouseLeave(object sender, MouseEventArgs e)
         {
             Mouse.OverrideCursor = Cursors.Arrow;
             var current = sender as Button;
-            current.Opacity = 0.8;
+            if (current != null) current.Opacity = 0.8;
         }
 
         private void buttonIssueList_Click(object sender, RoutedEventArgs e)
@@ -357,9 +340,9 @@ namespace MTMLiveReporting.Pages
                 }
                 _gridsuiteid = suiteid;
                 
-                var moduleinclusion = ChkModuleInclusion.IsChecked.Value;
+                var moduleinclusion = ChkModuleInclusion.IsChecked != null && ChkModuleInclusion.IsChecked.Value;
                 var modulefilter = Txtmodulefilter.Text;
-                var testerinclusion = ChkTesterInclusion.IsChecked.Value;
+                var testerinclusion = ChkTesterInclusion.IsChecked != null && ChkTesterInclusion.IsChecked.Value;
                 var testerfilter = Txttesterfilter.Text;
                 var automationstatus = CmbAutomationStaus.SelectedItem.ToString();
                 _currentreport = CmbReportSelection.SelectedItem.ToString();
@@ -377,18 +360,7 @@ namespace MTMLiveReporting.Pages
                         ResultDataGrid.ItemsSource = TesterLevelReport.Generate(_rawdata, modulefilter, moduleinclusion,
                             testerfilter, testerinclusion, automationstatus);
                         break;
-                    case "MODULEGROUP":
-                        ResultDataGrid.ItemsSource = ModuleLevelReportGroup.Generate(_rawdata, modulefilter,
-                            moduleinclusion, testerfilter, testerinclusion, automationstatus);
-                        break;
-                    case "TESTERGROUP":
-                        ResultDataGrid.ItemsSource = TesterLevelReportGroup.Generate(_rawdata, modulefilter,
-                            moduleinclusion, testerfilter, testerinclusion, automationstatus);
-                        break;
-                    case "ONELINESUMMARY":
-                        ResultDataGrid.ItemsSource = OneLineSummary.Generate(_rawdata, modulefilter, moduleinclusion,
-                            testerfilter, testerinclusion, automationstatus);
-                        break;
+                    
                 
                     case "TESTLIST":
                         ResultDataGrid.ItemsSource = TestList.Generate(_rawdata, modulefilter, moduleinclusion,

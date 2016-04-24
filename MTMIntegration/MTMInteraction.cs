@@ -6,17 +6,19 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using System.Windows.Controls;
-using System.Windows.Forms;
+
 using Microsoft.TeamFoundation.Client;
 using Microsoft.TeamFoundation.TestManagement.Client;
 using Microsoft.TeamFoundation.WorkItemTracking.Client;
-using TreeView = System.Windows.Forms.TreeView;
 
+
+[assembly: CLSCompliant(true)]
 namespace MTMIntegration
 {
     public static class MtmInteraction
@@ -25,87 +27,77 @@ namespace MTMIntegration
         #region Declarations
         private static Uri _tempUri;
 
-        private static List<string> _tester = new List<string>();
+        
         private static TfsTeamProjectCollection _tfsProjColl;
 
         private static ITestManagementService _tms;
 
         private static ITestManagementTeamProject _teamProject;
 
-        /// <summary>
-        /// The planid of the plan currently selected.
-        /// </summary>
-        private static int _testplanid;
-
-        public static int TestPlanId
-        {
-            get { return _testplanid; }
-        }
-
-
-        /// <summary>
-        /// Currently selected TestPlan
-        /// </summary>
-        private static ITestPlan TestPlan;
-
-        private static readonly Stopwatch Stp = new Stopwatch();
-
-        /// <summary>
-        /// Disctionary of suiteids and suites in the current selected plan
-        /// </summary>
-        private static Dictionary<int, string> SuiteDictionary = new Dictionary<int, string>();
-
-        /// <summary>
-        /// Sum of time taken to retrieve all outcomes in the query
-        /// </summary>
-        public static float OutcomeTime;
-        /// <summary>
-        /// Sum of time taken to retrieve all Tester names in the query
-        /// </summary>
-        public static float TesterTime;
-        /// <summary>
-        /// Sum of time taken to retrieve all priority information in the query
-        /// </summary>
-        public static float PriorityTime;
-        /// <summary>
-        /// Sum of time taken to retrieve all Automation status information in the query
-        /// </summary>
-        public static float AutomationTime;
-        /// <summary>
-        /// Sum of time taken to retrieve all initializations in the query
-        /// </summary>
-        public static float Initialize;
-        /// <summary>
-        /// Sum of time taken to retrieve all testcase id information in the query
-        /// </summary>
-        public static float TCidtime;
-        /// <summary>
-        /// Sum of time taken to retrieve all the titles in the query
-        /// </summary>
-        public static float Titletime;
-        /// <summary>
-        /// Sum of time taken to retrieve names of Automation Methods in the query
-        /// </summary>
-        public static float AutomationMethodTime;
-        /// <summary>
-        /// Sum of time taken to add entries to play list
-        /// </summary>
-        public static float AutomationPlaylistAddition;
-
-        public static float AutomationTestNameFetchTime;
-
-           
 
         private static string _projectName;
 
         /// <summary>
         /// Work Item store of the currect TFS Project.
         /// </summary>
-        public static WorkItemStore Wstore;
+        private static WorkItemStore _tfsStore;
+      private const string TestSuiteQuery = "Select * from TestPoint where SuiteId in  ('[#testsuiteid#])";
+        /// <summary>
+        /// Currently selected _testPlan
+        /// </summary>
+        private static ITestPlan _testPlan;
 
-     
+        private static readonly Stopwatch Stp = new Stopwatch();
 
-        private const string TestSuiteQuery = "Select * from TestPoint where SuiteId in  ('[#testsuiteid#])";
+        /// <summary>
+        /// Disctionary of suiteids and suites in the current selected plan
+        /// </summary>
+        private static readonly Dictionary<int, string> SuiteDictionary = new Dictionary<int, string>();
+
+
+        /// <summary>
+        /// ID of the current selected test plan
+        /// </summary>
+        public static int TestPlanId { get; private set; }
+        /// <summary>
+        /// Time taken to compute all the outcomes
+        /// </summary>
+        public static float OutcomeTime { get; private set; }
+
+        /// <summary>
+        /// Sum of time taken to retrieve all Tester names in the query
+        /// </summary>
+        public static float TesterTime { get; private set; }
+        /// <summary>
+        /// Sum of time taken to retrieve all priority information in the query
+        /// </summary>
+        public static float PriorityTime { get; private set; }
+        /// <summary>
+        /// Sum of time taken to retrieve all Automation status information in the query
+        /// </summary>
+        public static float AutomationTime { get; private set; }
+        /// <summary>
+        /// Sum of time taken to retrieve all initializations in the query
+        /// </summary>
+        public static float Initialize { get; private set; }
+        /// <summary>
+        /// Sum of time taken to retrieve all testcase id information in the query
+        /// </summary>
+        public static float TcidTime { get; private set; }
+        /// <summary>
+        /// Sum of time taken to retrieve all the titles in the query
+        /// </summary>
+        public static float TitleTime { get; private set; }
+        /// <summary>
+        /// Sum of time taken to retrieve names of Automation Methods in the query
+        /// </summary>
+        public static float AutomationMethodTime { get; private set; }
+        /// <summary>
+        /// Sum of time taken to add entries to play list
+        /// </summary>
+        public static float AutomationPlaylistAddition { get; private set; }
+
+      
 
         /// <summary>
         ///     Name of the currently selected Test Plan
@@ -113,18 +105,20 @@ namespace MTMIntegration
         public static string SelectedPlanName { get; set; }
 
         #endregion Declarations
+
+
         /// <summary>
         /// Clear the performance counters used to track the time taken for each field
         /// </summary>
-        public static void Clear_performance_counters()
+        public static void ClearPerformanceCounters()
         {
             OutcomeTime = 0;
             TesterTime = 0;
             PriorityTime = 0;
             AutomationTime = 0;
             Initialize = 0;
-            TCidtime = 0;
-            Titletime = 0;
+            TcidTime = 0;
+            TitleTime = 0;
             AutomationMethodTime = 0;
             AutomationPlaylistAddition = 0;
        
@@ -140,10 +134,10 @@ namespace MTMIntegration
         /// <param name="project">TFS Project Name</param>
         /// <param name="planId">Test Plan ID</param>
         
-        public static void Initialize_VSTF(Uri connUri, string project, int planId)
+        public static void InitializeVstfConnection(Uri connUri, string project, int planId)
         {
             _tempUri = connUri;
-            _testplanid = planId;
+            TestPlanId = planId;
             
             _projectName = project;
             _tfsProjColl = TfsTeamProjectCollectionFactory.GetTeamProjectCollection(_tempUri);
@@ -151,21 +145,11 @@ namespace MTMIntegration
            
                 _tms = _tfsProjColl.GetService<ITestManagementService>();
 
-                Wstore = (WorkItemStore) _tfsProjColl.GetService(typeof (WorkItemStore));
+            _tfsStore = (WorkItemStore) _tfsProjColl.GetService(typeof (WorkItemStore));
                 _teamProject = _tms.GetTeamProject(_projectName);
-                TestPlan = _teamProject.TestPlans.Find(TestPlanId);
-                SelectedPlanName = TestPlan.Name;
-
-                _teamProject.TfsIdentityStore.Refresh();
-
-                foreach (var i in _teamProject.TfsIdentityStore.AllUserIdentities)
-                {
-                    _tester.Add(i.DisplayName);
-                }
-
-            
-            
-           
+                _testPlan = _teamProject.TestPlans.Find(TestPlanId);
+                SelectedPlanName = _testPlan.Name;
+     
         }
 
         #region SuiteOperation
@@ -175,23 +159,21 @@ namespace MTMIntegration
         /// </summary>
         /// <param name="rootsuite">The root suite to search</param>
         /// <param name="suiteid">Suite id to search for</param>
-        /// <returns></returns>
-        private static IStaticTestSuite Getsubsuitebyid(IStaticTestSuite rootsuite, int suiteid)
+        /// <returns>Static suite which matches the suiteid within the rootsuite</returns>
+        private static IStaticTestSuite FindSuitebySuiteId(IStaticTestSuite rootsuite, int suiteid)
         {
-            for (var i = 0; i < rootsuite.SubSuites.Count; i++)
+            foreach (ITestSuiteBase t in rootsuite.SubSuites)
             {
-                if (rootsuite.SubSuites[i].GetType().Name.Equals("StaticTestSuite"))
-                {
-                    var subsuite = (IStaticTestSuite) rootsuite.SubSuites[i];
-                    if (subsuite.Id.Equals(suiteid))
-                        return subsuite;
+                if (!t.GetType().Name.Equals("StaticTestSuite")) continue;
+                var subsuite = (IStaticTestSuite) t;
+                if (subsuite.Id.Equals(suiteid))
+                    return subsuite;
 
-                    if (subsuite.SubSuites.Count > 0)
-                    {
-                        var retsuite = Getsubsuitebyid(subsuite, suiteid);
-                        if (retsuite != null)
-                            return retsuite;
-                    }
+                if (subsuite.SubSuites.Count > 0)
+                {
+                    var retsuite = FindSuitebySuiteId(subsuite, suiteid);
+                    if (retsuite != null)
+                        return retsuite;
                 }
             }
             return null;
@@ -199,253 +181,148 @@ namespace MTMIntegration
 
 
         /// <summary>
-        /// Returns the list of all subsuites under the given suiteid
+        /// Returns the list of all subsuites under the given suiteId
         /// </summary>
         /// <param name="suiteid"></param>
         /// <returns>List of all suiteids under the given suite</returns>
-        private static string Getsubsuites(int suiteid)
+        private static string FindSuiteAndGetAllChildSuites(int suiteid)
         {
-            var suitelist = string.Empty;
+            var suitelist = suiteid.ToString()+ "','";
+            IStaticTestSuite selectedSuite = null;
 
-            #region GetSuite
-            //Find the suite based on suiteid provides
-            IStaticTestSuite rootsuite = null;
-            for (var i = 0; i < TestPlan.RootSuite.SubSuites.Count; i++)
+           
+            //Traverse the test suite tree to get the suite referenced by suiteId.
+
+            foreach (var subsuite in _testPlan.RootSuite.SubSuites.Where(t => t.GetType().Name.Equals("StaticTestSuite")).Cast<IStaticTestSuite>())
             {
-                if (TestPlan.RootSuite.SubSuites[i].GetType().Name.Equals("StaticTestSuite"))
+                if (subsuite.Id.Equals(suiteid))
                 {
-                    var subsuite = (IStaticTestSuite) TestPlan.RootSuite.SubSuites[i];
-
-                    if (subsuite.Id.Equals(suiteid))
+                    selectedSuite = subsuite;
+                    suitelist = GetChildSuiteIds(selectedSuite, suitelist);
+                }
+                if (subsuite.SubSuites.Count > 0)
+                {
+                    var retsuite = FindSuitebySuiteId(subsuite, suiteid);
+                    if (retsuite != null)
                     {
-                        rootsuite = subsuite;
-                    }
-                    if (subsuite.SubSuites.Count > 0)
-                    {
-                        var retsuite = Getsubsuitebyid(subsuite, suiteid);
-                        if (retsuite != null)
-                            rootsuite = retsuite;
+                        selectedSuite = retsuite;
+                        suitelist = GetChildSuiteIds(selectedSuite, suitelist);
                     }
                 }
-
-                if (TestPlan.RootSuite.SubSuites[i].GetType().Name.Equals("DynamicTestSuite"))
-                {
-                    var suite = (IDynamicTestSuite) TestPlan.RootSuite.SubSuites[i];
-
-                    if (suite.Id.Equals(suiteid))
-                    {
-                    }
-                }
+                
+                
             }
 
-            #endregion GetSuite
-            if (rootsuite.GetType().Name.Equals("StaticTestSuite"))
-            {
-                suitelist = Getsubsuitelist(rootsuite, suitelist);
-            }
 
             return suitelist;
         }
 
-      /// <summary>
-        ///     Retrun subnode structure
+     
+
+
+        /// <summary>
+        ///     Returns all the child suite ids under the selected suite. It will recurse if the child suite has children.
         /// </summary>
         /// <param name="suite">Root suite</param>
-        /// <param name="tn">Node to be populated</param>
-        /// <returns></returns>
-        public static void GetSubSuiteTree(IStaticTestSuite suite, TreeNode tn)
+        /// <param name="suiteList">List of suiteids under this suite</param>
+        /// <returns>List of child suite ids</returns>
+        public static string GetChildSuiteIds(IStaticTestSuite suite, string suiteList )
         {
-            tn.Name = suite.Title;
-            tn.ImageIndex = suite.Id;
-
-            for (var i = 0; i < suite.SubSuites.Count; i++)
+            suiteList = suiteList + suite.Id + "','";
+            foreach (ITestSuiteBase t in suite.SubSuites)
             {
-                if (suite.SubSuites[i].GetType().Name.Equals("StaticTestSuite"))
+//need to check for suite type as static suites have children and others dont
+                if (t.GetType().Name.Equals("StaticTestSuite"))
                 {
-                    var subsuite = (IStaticTestSuite) suite.SubSuites[i];
-
+                    var subsuite = (IStaticTestSuite) t;
                     if (subsuite.SubSuites.Count > 0)
                     {
-                        tn.Nodes.Add(subsuite.Title, subsuite.Title, subsuite.Id);
-
-                        GetSubSuiteTree(subsuite, tn.Nodes[subsuite.Title]);
+                        suiteList = suiteList + subsuite.Id + "','";
+                        suiteList = suiteList + GetChildSuiteIds(subsuite, suiteList);
                     }
                     else
                     {
-                        tn.Nodes.Add(subsuite.Title, subsuite.Title, subsuite.Id);
+                        suiteList = suiteList + subsuite.Id + "','";
                     }
+                }
+                else if (t.GetType().Name.Equals("DynamicTestSuite"))
+                {
+                    var dynsuite = (IDynamicTestSuite) t;
+
+                    suiteList = suiteList + dynsuite.Id + "','";
+                }
+
+                else if (t.GetType().Name.Equals("RequirementTestSuite"))
+                {
+                    var reqsuite = (IRequirementTestSuite) t;
+
+                    suiteList = suiteList + reqsuite.Id + "','";
                 }
             }
+            return suiteList;
         }
 
-
-        /// <summary>
-        ///     Retrun subnode structure
-        /// </summary>
-        /// <param name="suite">Root suite</param>
-        /// <param name="suitelist">List of suiteids under this suite</param>
-        /// <returns></returns>
-        public static string Getsubsuitelist(IStaticTestSuite suite, string suitelist = "")
-        {
-            suitelist = suitelist + suite.Id + "','";
-            for (var i = 0; i < suite.SubSuites.Count; i++)
-            {
-                if (suite.SubSuites[i].GetType().Name.Equals("StaticTestSuite"))
-                {
-                    var subsuite = (IStaticTestSuite) suite.SubSuites[i];
-                    if (subsuite.SubSuites.Count > 0)
-                    {
-                        suitelist = suitelist + subsuite.Id + "','";
-                        suitelist = suitelist + Getsubsuitelist(subsuite, suitelist);
-                    }
-                    else
-                    {
-                        suitelist = suitelist + subsuite.Id + "','";
-                    }
-                }
-                else if (suite.SubSuites[i].GetType().Name.Equals("DynamicTestSuite"))
-                {
-                    var dynsuite = (IDynamicTestSuite) suite.SubSuites[i];
-
-                    suitelist = suitelist + dynsuite.Id + "','";
-                }
-
-                else
-                {
-                    var reqsuite = (IRequirementTestSuite) suite.SubSuites[i];
-
-                    suitelist = suitelist + reqsuite.Id + "','";
-                }
-            }
-            return suitelist;
-        }
-
-        /// <summary>
-        ///     Return results associated with suite
-        /// </summary>
-        /// <param name="suiteid">suiteid to fetch</param>
-        /// <param name="resdetails">List of resultdetails which will be populated</param>
-        /// <param name="suitename">Suitename will be appended to the result.</param>
-        /// <returns></returns>
-        public static bool getType(int suiteid)
-        {
-            for (var i = 0; i < TestPlan.RootSuite.SubSuites.Count; i++)
-            {
-                if (TestPlan.RootSuite.SubSuites[i].GetType().Name.Equals("StaticTestSuite"))
-                {
-                    var suite = (IStaticTestSuite)TestPlan.RootSuite.SubSuites[i];
-                    if (suite.Id.Equals(suiteid))
-                    {
-                        return true;
-                    }
-
-
-                    if (Getsubsuitetype(suite, suiteid))
-                        return true;
-                }
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        ///     Get the type of Suite
-        /// </summary>
-        /// <param name="suite"></param>
-        /// <param name="suiteid"></param>
-        /// <returns>bool</returns>
-        public static bool Getsubsuitetype(IStaticTestSuite suite, int suiteid)
-        {
-            for (var i = 0; i < suite.SubSuites.Count; i++)
-            {
-                if (suite.SubSuites[i].GetType().Name.Equals("StaticTestSuite"))
-                {
-                    var subsuite = (IStaticTestSuite)suite.SubSuites[i];
-
-                    if (subsuite.Id.Equals(suiteid))
-                    {
-                        return true;
-                    }
-
-                    if (subsuite.SubSuites.Count > 0)
-                    {
-                        if (Getsubsuitetype(subsuite, suiteid))
-                            return true;
-                    }
-                }
-            }
-
-            return false;
-        }
+    
+       
 
         #endregion SuiteOperation
 
+        #region GetResultsData
 
         /// <summary>
+        /// Quries the MTM Repository for the testcases under the given suiteid and returns all results under it.
         /// </summary>
-        /// <param name="suiteid"></param>
-        /// <param name="resdetails"></param>
-        /// <param name="suitename">List of suiteids</param>
-        public static void Getsuiteresults(int suiteid, ConcurrentBag<ResultSummary> resdetails,
-            string suitename = "None")
+        /// <param name="suiteId"></param>
+        /// <param name="testResults"></param>
+        /// <param name="suiteName">List of suiteids</param>
+        public static void GetResultDetails(int suiteId, ConcurrentBag<ResultSummary> testResults,
+            string suiteName )
         {
             Stp.Restart();
-            var type = getType(suiteid);
+           
             
-            ITestPointCollection pointCollection = null;
-            if (suiteid != -1)
+            ITestPointCollection pointCollection;
+            if (suiteId != -1)
             {
-                if (type)
-                {
-                    var suitelist = Getsubsuites(suiteid);
+                
+                    var suitelist = FindSuiteAndGetAllChildSuites(suiteId);
                     suitelist = suitelist.Substring(0, suitelist.Length - 2);
-                    pointCollection = TestPlan.QueryTestPoints(TestSuiteQuery.Replace("[#testsuiteid#]", suitelist));
-                    // like "SELECT * from TestPoint where TestCaseId='185716'
-                }
-                else
-                {
+                    pointCollection = _testPlan.QueryTestPoints(TestSuiteQuery.Replace("[#testsuiteid#]", suitelist));
                     
-                    pointCollection =
-                        TestPlan.QueryTestPoints(TestSuiteQuery.Replace("[#testsuiteid#]", suiteid.ToString()+"'"));
-                    
-                }
+               
             }
             else
             {
                 pointCollection =
-                    TestPlan.QueryTestPoints(TestSuiteQuery.Replace("[#testsuiteid#]", suitename));
+                    _testPlan.QueryTestPoints(TestSuiteQuery.Replace("[#testsuiteid#]", suiteName));
             }
 
 
-            resdetails.AsParallel();
-            var res = new ResultSummary();
-
-
-            Stp.Stop();
+         Stp.Stop();
             Initialize = Initialize + (float) Stp.ElapsedMilliseconds/1000;
+            //This loop cannot be made parallel as the mtm methods to retrieve result details are not threadsafe
             foreach (var tpoint in pointCollection)
             {
-                res = new ResultSummary();
+                ResultSummary res = new ResultSummary();
                 Stp.Restart();
-                var outcome = string.Empty;
-                outcome = tpoint.MostRecentResultOutcome.ToString();
+                var outcome = tpoint.MostRecentResultOutcome.ToString();
 
+                //Special logic for in-progress status. Though MTM shows the teststatus and outcome in similar way, it stores them separately.
                 if (tpoint.MostRecentResult!=null && tpoint.MostRecentResult.State.Equals(TestResultState.InProgress))
 
                 {
                     outcome = "In progress";
                 }
-                    if (outcome.Equals("Blocked", StringComparison.InvariantCultureIgnoreCase))
+                    if (outcome.Equals("Blocked", StringComparison.OrdinalIgnoreCase ))
                 {
-                    if (
-                        !tpoint.MostRecentResult.Outcome.ToString()
-                            .Equals("Blocked", StringComparison.InvariantCultureIgnoreCase))
-                        res.Outcome = "Active";
-                    else
-                        res.Outcome = "Blocked";
+                    //If a result is unblocked, the most recent result still shows blocked hence we have to have special logic. The alternate option of always using tpoint.MostRecentResult.Outcome
+                    //is not feasible as it is slower that tpoint.MostRecentResultOutcome hence should be used only when needed
+                    res.Outcome = !tpoint.MostRecentResult.Outcome.ToString()
+                        .Equals("Blocked", StringComparison.OrdinalIgnoreCase) ? "Active" : "Blocked";
                 }
-                else if (outcome.Equals("Unspecified", StringComparison.InvariantCultureIgnoreCase) ||
-                         outcome.Equals("None", StringComparison.InvariantCultureIgnoreCase))
+                    //There is no active status but MTM shows Active in UI
+                else if (outcome.Equals("Unspecified", StringComparison.OrdinalIgnoreCase) ||
+                         outcome.Equals("None", StringComparison.OrdinalIgnoreCase))
                 {
                     res.Outcome = "Active";
                 }
@@ -458,9 +335,9 @@ namespace MTMIntegration
                 Stp.Restart();
                 res.SuiteName = SuiteDictionary[tpoint.SuiteId];
 
-                res.TCID = tpoint.TestCaseId;
+                res.TcId = tpoint.TestCaseId;
                 Stp.Stop();
-                TCidtime = TCidtime + (float) Stp.ElapsedMilliseconds/1000;
+                TcidTime = TcidTime + (float) Stp.ElapsedMilliseconds/1000;
 
                 try
                 {
@@ -477,14 +354,7 @@ namespace MTMIntegration
                 try
                 {
                     Stp.Restart();
-                    if (tpoint.AssignedTo != null)
-                    {
-                        res.Tester = tpoint.AssignedTo.DisplayName;
-                    }
-                    else
-                    {
-                        res.Tester = "Nobody";
-                    }
+                    res.Tester = tpoint.AssignedTo != null ? tpoint.AssignedTo.DisplayName : "Nobody";
                 
 
 
@@ -504,7 +374,7 @@ namespace MTMIntegration
                     Stp.Restart();
                     res.Title = tpoint.TestCaseWorkItem.Title;
                     Stp.Stop();
-                    Titletime = Titletime + (float) Stp.ElapsedMilliseconds/1000;
+                    TitleTime = TitleTime + (float) Stp.ElapsedMilliseconds/1000;
                 }
 
 
@@ -527,272 +397,63 @@ namespace MTMIntegration
                     res.Priority = -1;
                 }
 
-                lock (resdetails)
+                lock (testResults)
                 {
-                    resdetails.Add(res);
+                    testResults.Add(res);
                 }
             }
         }
 
-       
 
+        #endregion GetResultsData
 
-        /// <summary>
-        ///     Gives the list of suites in a plan
-        /// </summary>
-        /// <param name="planId"></param>
-        /// <returns>list of suite title</returns>
-        public static List<string> GetSuite(int planId)
-        {
-            TestPlan = _teamProject.TestPlans.Find(planId);
-            var suiteList = new List<string>();
-            for (var i = 0; i < TestPlan.RootSuite.SubSuites.Count; i++)
-            {
-                if (TestPlan.RootSuite.SubSuites[i].GetType().Name.Equals("StaticTestSuite"))
-                {
-                    var subsuite = (IStaticTestSuite) TestPlan.RootSuite.SubSuites[i];
-                    suiteList.Add(subsuite.Title);
-                }
-            }
-            return suiteList;
-        }
-
+        #region PlanDetails
 
         /// <summary>
         ///     Get the dictionary with plan id as key and name as value.
         /// </summary>
-        /// <returns> Dicitonary</returns>
-        public static Dictionary<int, string> GetPlanIdsDictionary()
+        
+        public static Dictionary<int, string> PlanIdsDictionary
         {
-            var planName = new Dictionary<int, string>();
-
-            var plan = _teamProject.TestPlans.Query("Select *from TestPlan");
-            foreach (var i in plan)
+            get
             {
-                planName.Add(i.Id, i.Name);
-            }
+                var plan = _teamProject.TestPlans.Query("Select * from TestPlan");
 
-            return planName;
+                return plan.ToDictionary(i => i.Id, i => i.Name);
+            }
         }
 
         /// <summary>
         ///     Look up function that searches user particular plan name using Id.
         /// </summary>
         /// <param name="planId"></param>
-        /// <returns> string </returns>
+        /// <returns> Name of the plan </returns>
         public static string GetPlanName(int planId)
         {
-            try {
-                var planName = new Dictionary<int, string>();
-                planName = GetPlanIdsDictionary();
-                var name = string.Empty;
-                if (planName.ContainsKey(planId))
+            
+               
+                
+                if (PlanIdsDictionary.ContainsKey(planId))
                 {
-                    name = planName[planId];
-                    return name;
+                return PlanIdsDictionary[planId];
+                    
                 }
 
                 return null;
-            }catch(Exception)
-            {
-                return null;
-            }
-        }
-
-        // get the query filter list
-
-        public class Filter
-        {
-            public string Name { get; set; }
-            public string Op { get; set; }
-            public string Value { get; set; }
-        }
-
-        #region treelogic
-
-        /// <summary>
-        ///     Construct MTM hierarchy as a tree
-        /// </summary>
-        /// <param name="planid">id of the plan</param>
-        /// <param name="mtmtree">The treeview to be populated</param>
-        /// <returns></returns>
-        public static Dictionary<string, int> Getsuitelist(int planid, string iteration, List<string> selectedSuite)
-        {
-            var appDictionary = new Dictionary<string, int>();
-            appDictionary.Clear();
-
-
-            TestPlan = _teamProject.TestPlans.Find(planid);
-            for (var j = 0; j < TestPlan.RootSuite.SubSuites.Count; j++)
-            {
-                if (TestPlan.RootSuite.SubSuites[j].GetType().Name.Equals("StaticTestSuite"))
-                {
-                    var suite = (IStaticTestSuite) TestPlan.RootSuite.SubSuites[j];
-                    if (selectedSuite.Contains(suite.Title))
-                    {
-                        for (var i = 0; i < suite.SubSuites.Count; i++)
-                        {
-                            if (suite.SubSuites[i].GetType().Name.Equals("StaticTestSuite"))
-                            {
-                                var subsuite = (IStaticTestSuite) suite.SubSuites[i];
-                                if (subsuite.SubSuites.Count > 0)
-                                {
-                                    if (subsuite.Title.Equals(iteration, StringComparison.InvariantCultureIgnoreCase))
-                                    {
-                                        if (appDictionary.ContainsKey(suite.Title) == false)
-                                        {
-                                            appDictionary.Add(suite.Title, subsuite.Id);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            return appDictionary;
-        }
-
-        /// <summary>
-        ///     Construct MTM hierarchy as a tree
-        /// </summary>
-        /// <param name="planid">id of the plan</param>
-        /// <param name="mtmtree">The treeview to be populated</param>
-        /// <returns></returns>
-        public static void Buildsuitedictionary(int planid, bool includeparent = false)
-        {
-            SuiteDictionary.Clear();
-            TestPlan = _teamProject.TestPlans.Find(planid);
-            if (TestPlan == null)
-            {
-                var exp =
-                    new ApplicationException(
-                        "Invalid planid.You can get the planid from MTM in the Select Test Plan Window.");
-                throw exp;
-            }
-
-            for (var i = 0; i < TestPlan.RootSuite.SubSuites.Count; i++)
-            {
-                if (TestPlan.RootSuite.SubSuites[i].GetType().Name.Equals("StaticTestSuite"))
-                {
-                    var suite = (IStaticTestSuite) TestPlan.RootSuite.SubSuites[i];
-                    if (includeparent)
-                    {
-                        SuiteDictionary.Add(suite.Id, TestPlan.RootSuite.Title + "\\" + suite.Title);
-                    }
-                    else
-                    {
-                        SuiteDictionary.Add(suite.Id, suite.Title);
-                    }
-                    Buildsubsuitedictionary(suite, TestPlan.RootSuite.Title + "\\", includeparent);
-                }
-
-                else if (TestPlan.RootSuite.SubSuites[i].GetType().Name.Equals("DynamicTestSuite"))
-                {
-                    var suite = (IDynamicTestSuite) TestPlan.RootSuite.SubSuites[i];
-                    if (includeparent)
-                    {
-                        SuiteDictionary.Add(suite.Id, TestPlan.RootSuite.Title + "\\" + suite.Title);
-                    }
-                    else
-                    {
-                        SuiteDictionary.Add(suite.Id, suite.Title);
-                    }
-                }
-                else
-                {
-                    var suite = (IRequirementTestSuite) TestPlan.RootSuite.SubSuites[i];
-
-                    if (includeparent)
-                    {
-                        SuiteDictionary.Add(suite.Id, TestPlan.RootSuite.Title + "\\" + suite.Title);
-                    }
-                    else
-                    {
-                        SuiteDictionary.Add(suite.Id, suite.Title);
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        ///     Retrun subnode structure
-        /// </summary>
-        /// <param name="suite">Root suite</param>
-        /// <param name="includeparent"></param>
-        /// <param name="prefix"> prefix for title</param>
-        /// <returns></returns>
-        public static void Buildsubsuitedictionary(IStaticTestSuite suite, string prefix, bool includeparent = false)
-        {
-            for (var i = 0; i < suite.SubSuites.Count; i++)
-            {
-                if (suite.SubSuites[i].GetType().Name.Equals("StaticTestSuite"))
-                {
-                    var subsuite = (IStaticTestSuite) suite.SubSuites[i];
-                    if (subsuite.SubSuites.Count > 0)
-                    {
-                        if (includeparent)
-                        {
-                            SuiteDictionary.Add(subsuite.Id, prefix + "\\" + suite.Title + "\\" + subsuite.Title);
-                        }
-                        else
-                        {
-                            SuiteDictionary.Add(subsuite.Id, subsuite.Title);
-                        }
-                        Buildsubsuitedictionary(subsuite, prefix + "\\" + suite.Title, includeparent);
-                    }
-                    else
-                    {
-                        if (includeparent)
-                        {
-                            SuiteDictionary.Add(subsuite.Id, prefix + "\\" + suite.Title + "\\" + subsuite.Title);
-                        }
-                        else
-                        {
-                            SuiteDictionary.Add(subsuite.Id, subsuite.Title);
-                        }
-                    }
-                }
-                else if (suite.SubSuites[i].GetType().Name.Equals("DynamicTestSuite"))
-                {
-                    var dynsuite = (IDynamicTestSuite) suite.SubSuites[i];
-
-
-                    if (includeparent)
-                    {
-                        SuiteDictionary.Add(dynsuite.Id, prefix + "\\" + suite.Title + "\\" + dynsuite.Title);
-                    }
-                    else
-                    {
-                        SuiteDictionary.Add(dynsuite.Id, dynsuite.Title);
-                    }
-                }
-                else
-                {
-                    var reqsuite = (IRequirementTestSuite) suite.SubSuites[i];
-                    if (includeparent)
-                    {
-                        SuiteDictionary.Add(reqsuite.Id, prefix + "\\" + suite.Title + "\\" + reqsuite.Title);
-                    }
-
-                    else
-                    {
-                        SuiteDictionary.Add(reqsuite.Id, reqsuite.Title);
-                    }
-                }
-            }
+            
         }
 
 
-        public static string GetSuitePath(int suiteid)
-        {
-            if (SuiteDictionary.ContainsKey(suiteid))
-            {
-                return SuiteDictionary[suiteid];
-            }
-            return null;
-        }
+        #endregion PlanDetails
+
+
+
+
+
+
+
+
+        #region TestCaseAssignment
 
         /// <summary>
         ///     Get the name of Testers
@@ -800,8 +461,10 @@ namespace MTMIntegration
         /// <returns>List of tester names</returns>
         public static List<string> GetTester()
         {
+            _teamProject.TfsIdentityStore.Refresh();
+
+            return _teamProject.TfsIdentityStore.AllUserIdentities.Select(i => i.DisplayName).ToList();
             
-            return _tester;
         }
 
 
@@ -810,14 +473,14 @@ namespace MTMIntegration
         /// <summary>
         ///     Assign Tester to select test cases in Query Filter
         /// </summary>
-        /// <param name="suiteid"></param>
+        /// <param name="suiteId"></param>
         /// <param name="selectedTcId"></param>
         /// <param name="name"></param>
-        public static void AssignTester(int suiteid, List<int> selectedTcId, string name)
+        public static void AssignTester(int suiteId, List<int> selectedTcId, string name)
         {
-            var suitelist = Getsubsuites(suiteid);
+            var suitelist = FindSuiteAndGetAllChildSuites(suiteId);
             suitelist = suitelist.Substring(0, suitelist.Length - 3)+"'";
-            var pointCollection = TestPlan.QueryTestPoints(TestSuiteQuery.Replace("[#testsuiteid#]", suitelist));
+            var pointCollection = _testPlan.QueryTestPoints(TestSuiteQuery.Replace("[#testsuiteid#]", suitelist));
 
 
             foreach (var tpoint in pointCollection)
@@ -835,20 +498,18 @@ namespace MTMIntegration
         /// <summary>
         ///     Create Palylist with selected test cases
         /// </summary>
-        /// <param name="suiteid"></param>
-        /// <param name="selectedTcId"></param>
-        /// <param name="name"></param>
-        public static void CreatePlaylist(int suiteid, List<int> selectedTcId, string fileLocation)
+      /// <param name="selectedTcId"></param>
+        /// <param name="fileLocation"></param>
+        public static void CreatePlaylist(List<int> selectedTcId, string fileLocation)
         {
-            try
-            {
+            
                 Stp.Restart();
                 string automatedTestName, playlistFileContent = "<Playlist Version=\"1.0\">";
                 var automatedTestList = new ConcurrentBag<string>();
                 automatedTestList.AsParallel();
                 Parallel.ForEach(selectedTcId, testcaseId =>
                 {
-                    var pt = Wstore.GetWorkItem(testcaseId);
+                    var pt = _tfsStore.GetWorkItem(testcaseId);
                     automatedTestName = pt.Fields["Automated Test Name"].Value.ToString();
                     lock (automatedTestList)
                     {
@@ -859,31 +520,25 @@ namespace MTMIntegration
                 Stp.Stop();
                 AutomationMethodTime = (float) Stp.ElapsedMilliseconds/1000;
                 Stp.Restart();
-                foreach (var testName in dedup)
-                {
-                    playlistFileContent = playlistFileContent + "<Add Test=\"" + testName + "\" />";
-                }
+            playlistFileContent = dedup.Aggregate(playlistFileContent, (current, testName) => current + "<Add Test=\"" + testName + "\" />");
 
-                playlistFileContent += "</Playlist>";
+            playlistFileContent += "</Playlist>";
                 var fs = new FileStream(fileLocation, FileMode.Create);
                 using (var writer = new StreamWriter(fs))
                 {
                     writer.WriteLine(playlistFileContent);
                 }
+                fs.Dispose();
                 Stp.Stop();
                 AutomationPlaylistAddition = (float) Stp.ElapsedMilliseconds/1000;
 
                
                 
               
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Error generating playlist " + ex);
-            }
+           
         }
 
-        #endregion
+        #endregion TestCaseAssignment
 
         #region wpftreelogic
 
@@ -892,13 +547,14 @@ namespace MTMIntegration
         /// </summary>
         /// <param name="planid">id of the plan</param>
         /// <param name="mtmtree">The treeview to be populated</param>
+        /// <param name="includeparent"></param>
         /// <returns></returns>
-        public static void Getwpfsuitetree(int planid, System.Windows.Controls.TreeView mtmtree,
-            bool includeparent = false)
+        public static void Getwpfsuitetree(int planid, TreeView mtmtree,
+            bool includeparent )
         {
             SuiteDictionary.Clear();
-            TestPlan = _teamProject.TestPlans.Find(planid);
-            if (TestPlan == null)
+            _testPlan = _teamProject.TestPlans.Find(planid);
+            if (_testPlan == null)
             {
                 var exp =
                     new ApplicationException(
@@ -906,38 +562,34 @@ namespace MTMIntegration
                 throw exp;
             }
 
-            for (var i = 0; i < TestPlan.RootSuite.SubSuites.Count; i++)
+            foreach (ITestSuiteBase t in _testPlan.RootSuite.SubSuites)
             {
-                if (TestPlan.RootSuite.SubSuites[i].GetType().Name.Equals("StaticTestSuite"))
+                if (t.GetType().Name.Equals("StaticTestSuite"))
                 {
-                    var suite = (IStaticTestSuite) TestPlan.RootSuite.SubSuites[i];
-                    var tvitem = new TreeViewItem();
-                    tvitem.Header = suite.Title;
-                    tvitem.Tag = suite.Id;
+                    var suite = (IStaticTestSuite) t;
+                    TreeViewItem tvitem = new TreeViewItem {Header = suite.Title, Tag = suite.Id};
 
 
                     if (includeparent)
                     {
-                        SuiteDictionary.Add(suite.Id, TestPlan.RootSuite.Title + "\\" + suite.Title);
+                        SuiteDictionary.Add(suite.Id, _testPlan.RootSuite.Title + "\\" + suite.Title);
                     }
                     else
                     {
                         SuiteDictionary.Add(suite.Id, suite.Title);
                     }
-                    Getwpfsubsuitetree(suite, tvitem, TestPlan.RootSuite.Title + "\\", includeparent);
+                    Getwpfsubsuitetree(suite, tvitem, _testPlan.RootSuite.Title + "\\", includeparent);
                     mtmtree.Items.Add(tvitem);
                 }
-                else if (TestPlan.RootSuite.SubSuites[i].GetType().Name.Equals("DynamicTestSuite"))
+                else if (t.GetType().Name.Equals("DynamicTestSuite"))
                 {
-                    var suite = (IDynamicTestSuite) TestPlan.RootSuite.SubSuites[i];
-                    var tvitem = new TreeViewItem();
-                    tvitem.Header = suite.Title;
-                    tvitem.Tag = suite.Id;
+                    var suite = (IDynamicTestSuite) t;
+                    var tvitem = new TreeViewItem {Header = suite.Title, Tag = suite.Id};
 
 
                     if (includeparent)
                     {
-                        SuiteDictionary.Add(suite.Id, TestPlan.RootSuite.Title + "\\" + suite.Title);
+                        SuiteDictionary.Add(suite.Id, _testPlan.RootSuite.Title + "\\" + suite.Title);
                     }
                     else
                     {
@@ -949,15 +601,13 @@ namespace MTMIntegration
 
                 else
                 {
-                    var suite = (IRequirementTestSuite) TestPlan.RootSuite.SubSuites[i];
-                    var tvitem = new TreeViewItem();
-                    tvitem.Header = suite.Title;
-                    tvitem.Tag = suite.Id;
+                    var suite = (IRequirementTestSuite) t;
+                    var tvitem = new TreeViewItem {Header = suite.Title, Tag = suite.Id};
 
 
                     if (includeparent)
                     {
-                        SuiteDictionary.Add(suite.Id, TestPlan.RootSuite.Title + "\\" + suite.Title);
+                        SuiteDictionary.Add(suite.Id, _testPlan.RootSuite.Title + "\\" + suite.Title);
                     }
                     else
                     {
@@ -969,143 +619,122 @@ namespace MTMIntegration
             }
         }
 
-        /// <summary>
-        ///     Retrun subnode structure
-        /// </summary>
-        /// <param name="suite">Root suite</param>
-        /// <param name="tn">Node to be populated</param>
-        /// <returns></returns>
+     /// <summary>
+     /// Recursively build the WPF tree for a subsuite
+     /// </summary>
+     /// <param name="suite">The root suite to build the tree</param>
+     /// <param name="mtmtree">Tree Object</param>
+     /// <param name="prefix">Prefix to get the full path in suitedictionary</param>
+     /// <param name="includeparent">Whether to include parent in suite name</param>
         public static void Getwpfsubsuitetree(IStaticTestSuite suite, TreeViewItem mtmtree, string prefix,
-            bool includeparent = false)
-        {
-            for (var i = 0; i < suite.SubSuites.Count; i++)
-            {
-                if (suite.SubSuites[i].GetType().Name.Equals("StaticTestSuite"))
-                {
-                    var subsuite = (IStaticTestSuite) suite.SubSuites[i];
-                    if (subsuite.SubSuites.Count > 0)
-                    {
-                        var tvitem = new TreeViewItem();
-                        tvitem.Header = subsuite.Title;
-                        tvitem.Tag = subsuite.Id;
-                        if (includeparent)
-                        {
-                            SuiteDictionary.Add(subsuite.Id, prefix + "\\" + suite.Title + "\\" + subsuite.Title);
-                        }
-                        else
-                        {
-                            SuiteDictionary.Add(subsuite.Id, subsuite.Title);
-                        }
-                        Getwpfsubsuitetree(subsuite, tvitem, prefix + "\\" + suite.Title, includeparent);
-                        mtmtree.Items.Add(tvitem);
-                    }
-                    else
-                    {
-                        var tvitem = new TreeViewItem();
-                        tvitem.Header = subsuite.Title;
-                        tvitem.Tag = subsuite.Id;
-                        if (includeparent)
-                        {
-                            SuiteDictionary.Add(subsuite.Id, prefix + "\\" + suite.Title + "\\" + subsuite.Title);
-                        }
-                        else
-                        {
-                            SuiteDictionary.Add(subsuite.Id, subsuite.Title);
-                        }
-                        mtmtree.Items.Add(tvitem);
-                    }
-                }
-                else if (suite.SubSuites[i].GetType().Name.Equals("DynamicTestSuite"))
-                {
-                    var dynsuite = (IDynamicTestSuite) suite.SubSuites[i];
-                    var tvitem = new TreeViewItem();
-                    tvitem.Header = dynsuite.Title;
-                    tvitem.Tag = dynsuite.Id;
-                    if (includeparent)
-                    {
-                        SuiteDictionary.Add(dynsuite.Id, prefix + "\\" + suite.Title + "\\" + dynsuite.Title);
-                    }
-                    else
-                    {
-                        SuiteDictionary.Add(dynsuite.Id, dynsuite.Title);
-                    }
-                    mtmtree.Items.Add(tvitem);
-                }
+            bool includeparent )
+     {
+         foreach (ITestSuiteBase t in suite.SubSuites)
+         {
+             if (t.GetType().Name.Equals("StaticTestSuite"))
+             {
+                 var subsuite = (IStaticTestSuite) t;
+                 if (subsuite.SubSuites.Count > 0)
+                 {
+                     var tvitem = new TreeViewItem {Header = subsuite.Title, Tag = subsuite.Id};
+                     if (includeparent)
+                     {
+                         SuiteDictionary.Add(subsuite.Id, prefix + "\\" + suite.Title + "\\" + subsuite.Title);
+                     }
+                     else
+                     {
+                         SuiteDictionary.Add(subsuite.Id, subsuite.Title);
+                     }
+                     Getwpfsubsuitetree(subsuite, tvitem, prefix + "\\" + suite.Title, includeparent);
+                     mtmtree.Items.Add(tvitem);
+                 }
+                 else
+                 {
+                     var tvitem = new TreeViewItem {Header = subsuite.Title, Tag = subsuite.Id};
+                     if (includeparent)
+                     {
+                         SuiteDictionary.Add(subsuite.Id, prefix + "\\" + suite.Title + "\\" + subsuite.Title);
+                     }
+                     else
+                     {
+                         SuiteDictionary.Add(subsuite.Id, subsuite.Title);
+                     }
+                     mtmtree.Items.Add(tvitem);
+                 }
+             }
+             else if (t.GetType().Name.Equals("DynamicTestSuite"))
+             {
+                 var dynsuite = (IDynamicTestSuite) t;
+                 TreeViewItem tvitem = new TreeViewItem {Header = dynsuite.Title, Tag = dynsuite.Id};
+                 if (includeparent)
+                 {
+                     SuiteDictionary.Add(dynsuite.Id, prefix + "\\" + suite.Title + "\\" + dynsuite.Title);
+                 }
+                 else
+                 {
+                     SuiteDictionary.Add(dynsuite.Id, dynsuite.Title);
+                 }
+                 mtmtree.Items.Add(tvitem);
+             }
 
-                else
+                else if (t.GetType().Name.Equals("RequirementTestSuite"))
                 {
-                    var dynsuite = (IRequirementTestSuite) suite.SubSuites[i];
-                    var tvitem = new TreeViewItem();
-                    tvitem.Header = dynsuite.Title;
-                    tvitem.Tag = dynsuite.Id;
-                    if (includeparent)
-                    {
-                        SuiteDictionary.Add(dynsuite.Id, prefix + "\\" + suite.Title + "\\" + dynsuite.Title);
-                    }
-                    else
-                    {
-                        SuiteDictionary.Add(dynsuite.Id, dynsuite.Title);
-                    }
-                    mtmtree.Items.Add(tvitem);
-                }
-            }
-        }
+                 var dynsuite = (IRequirementTestSuite) t;
+                 var tvitem = new TreeViewItem {Header = dynsuite.Title, Tag = dynsuite.Id};
+                 if (includeparent)
+                 {
+                     SuiteDictionary.Add(dynsuite.Id, prefix + "\\" + suite.Title + "\\" + dynsuite.Title);
+                 }
+                 else
+                 {
+                     SuiteDictionary.Add(dynsuite.Id, dynsuite.Title);
+                 }
+                 mtmtree.Items.Add(tvitem);
+             }
+         }
+     }
 
-        #endregion
+        #endregion wpftreelogic
 
 
 
         #region ResultUpdate
 
-        private static readonly string TestPointQuery = "Select * from TestPoint where TestCaseId= '[#testcaseid#]'";
-
-        private static readonly string TestPointSuiteQuery =
-            "Select * from TestPoint where TestCaseId= '[#testcaseid#]' and SuiteId = '[#testsuiteid#]'";
-
-
-        //private static ITestRun PlanRun;
-
-        private static ITestCaseResult _testResult;
-
-        private static readonly string PlanBuildNumber = string.Empty;
+       
 
 
         public static string UpdateResult(string tcid, string comments, string suiteName, bool usebuildnumber,
-            string result = "Passed", int bugid = 0, string attachments = null)
+            string result = "Passed",string planBuildNumber="",float duration=0 )
         {
-            var tsid = string.Empty;
-            var returnstring = "success";
-            var finalsuite = string.Empty;
-            var debug = string.Empty;
 
+             const string testPointQuery = "Select * from TestPoint where TestCaseId= '[#testcaseid#]'";
 
-            var he = MtmInteraction.TestPlan.QueryTestPointHierarchy(TestPointQuery.Replace("[#testcaseid#]", tcid));
-            // finds all occurences of this test case.
-            //foreach (HierarchyEntry a in he.Children)
-            //{
-            //    debug = a.SuiteTitle;
-            //    if (a.SuiteTitle.Equals(SuiteName))// to match the pass specified in config
-            //    {
-            //        suiteid = getFinalSuiteID(a);
-            //    }
-            //}
+        const string testPointSuiteQuery =
+            "Select * from TestPoint where TestCaseId= '[#testcaseid#]' and SuiteId = '[#testsuiteid#]'";
+       
+       
+   
+            //Find all instances of the test case
+            var he = _testPlan.QueryTestPointHierarchy(testPointQuery.Replace("[#testcaseid#]", tcid));
+           
             if (he.Children.Count <= 0)
                 return "Testcase not found";
-            tsid = GetFinalSuiteId(he, suiteName, out finalsuite).ToString();
+            //Find the child testsuite where the testcase exists under the given suitename
+           string tsid = GetFinalSuiteId(he, suiteName).ToString(CultureInfo.InvariantCulture);
             if (tsid.Equals("-1"))
                 return "Testcase does not belong to suite";
-
+            
             var pointCollection =
-                MtmInteraction.TestPlan.QueryTestPoints(
-                    TestPointSuiteQuery.Replace("[#testcaseid#]", tcid).Replace("[#testsuiteid#]", tsid));
-            // like "SELECT * from TestPoint where TestCaseId='185716'
-            var planRun = MtmInteraction.TestPlan.CreateTestRun(false);
+                _testPlan.QueryTestPoints(
+                    testPointSuiteQuery.Replace("[#testcaseid#]", tcid).Replace("[#testsuiteid#]", tsid));
+           
+            var planRun = _testPlan.CreateTestRun(false);
 
 
             planRun.Title = "Test Run";
             if (usebuildnumber)
             {
-                planRun.BuildNumber = PlanBuildNumber;
+                planRun.BuildNumber = planBuildNumber;
             }
 
 
@@ -1113,96 +742,46 @@ namespace MTMIntegration
             {
                 planRun.AddTestPoint(pointCollection[0], null);
                 planRun.Save();
-                var tp = pointCollection[0];
-                var proj = tp.TestCaseWorkItem.Area;
-                _testResult = planRun.QueryResults()[planRun.QueryResults().Count - 1];
-                _testResult.DateStarted = DateTime.Now;
-                //Console.WriteLine("Test Result count : {0}", PlanRun.QueryResults().Count);
-                if (result.Equals("In progress", StringComparison.InvariantCultureIgnoreCase))
+                ITestCaseResult testResult= planRun.QueryResults()[planRun.QueryResults().Count - 1];
+                testResult.DateStarted = DateTime.Now;
+               
+                if (result.Equals("In progress", StringComparison.OrdinalIgnoreCase))
                 {
-                    _testResult.State = TestResultState.InProgress;
-                    _testResult.Outcome = TestOutcome.None;
+                    testResult.State = TestResultState.InProgress;
+                    testResult.Outcome = TestOutcome.None;
                 }
-                else if (result.Equals("Active", StringComparison.InvariantCultureIgnoreCase))
+                else if (result.Equals("Active", StringComparison.OrdinalIgnoreCase))
                 {
-                    _testResult.State = TestResultState.Completed;
-                    _testResult.Outcome = TestOutcome.None;
+                    testResult.State = TestResultState.Unspecified;
+                    testResult.Outcome = TestOutcome.None;
                 }
                 else
                 {
-                    _testResult.State = TestResultState.Completed;
+                    testResult.State = TestResultState.Completed;
                     //TestResult.Outcome = TestOutcome.Passed;
 
-                    _testResult.Outcome = (TestOutcome)Enum.Parse(typeof(TestOutcome), result);
+                    testResult.Outcome = (TestOutcome)Enum.Parse(typeof(TestOutcome), result);
                 }
 
-                _testResult.ComputerName = Dns.GetHostName();
-                _testResult.RunBy = planRun.Owner;
-                var tc = _testResult.GetTestCase();
+                testResult.ComputerName = Dns.GetHostName();
+                testResult.RunBy = planRun.Owner;
+               
 
 
-                if (attachments != null && !string.IsNullOrEmpty(attachments))
-                {
-                    var attachmentlist = attachments.Split(';');
-                    foreach (var attachementpath in attachmentlist)
-                    {
-                        if (File.Exists(attachementpath))
-                        {
-                            _testResult.Attachments.Add(_testResult.CreateAttachment(attachementpath,
-                                SourceFileAction.None));
-                            planRun.Attachments.Add(planRun.CreateAttachment(attachementpath, SourceFileAction.None));
-                        }
-                        else
-                        {
-                            returnstring = "Success but Attachment-" + attachementpath + " not found";
-                        }
-                    }
-                }
+                testResult.Duration =TimeSpan.FromSeconds(duration);
 
-                _testResult.Comment = "Suite:" + suiteName + " " + "Build:" + PlanBuildNumber + " " + comments;
-                _testResult.DateCompleted = DateTime.Now;
+                testResult.Comment = "Suite:" + suiteName + " " + "Build:" + planBuildNumber + " " + comments;
+                testResult.DateCompleted = DateTime.Now;
 
-                if (bugid != 0)
-                {
-                    try
-                    {
-                        var tmp = MtmInteraction.Wstore.GetWorkItem(bugid);
-                        _testResult.AssociateWorkItem(tmp);
-                        _testResult.Save();
-                        if (!string.IsNullOrEmpty(attachments))
-                        {
-                            var attachmentlist = attachments.Split(';');
-                            foreach (var attachementpath in attachmentlist)
-                            {
-                                if (File.Exists(attachementpath))
-                                {
-                                    var att = new Attachment(attachementpath);
-                                    tmp.Attachments.Add(att);
-                                }
-                            }
-                        }
+               testResult.Save();
 
-                        var linkTypeEnd = MtmInteraction.Wstore.WorkItemLinkTypes.LinkTypeEnds["Test Case"];
-                        var r = new RelatedLink(linkTypeEnd, tc.Id);
-                        tmp.Links.Add(r);
-
-                        tmp.Save();
-                    }
-                    catch (Exception e)
-                    {
-                        returnstring = "Result saved succesfully but bug could not be associated due to" + e.Message;
-                    }
-                }
-                else
-                    _testResult.Save();
-
-                return returnstring;
+                return "Success";
             }
 
             catch (Exception)
             {
                 planRun.Delete();
-                //return ex.Message;
+              
                 throw;
             }
         }
@@ -1213,14 +792,14 @@ namespace MTMIntegration
         /// </summary>
         /// <param name="testhe"> The first node. One of its sub suites contains the case to be passed.</param>
         /// <param name="suitename">Name of the suite can be a bracnh or leaf</param>
-        /// <param name="finalsuitename">Name of the leaf suite </param>
+     
         /// <returns>suite id</returns>
-        private static int GetFinalSuiteId(HierarchyEntry testhe, string suitename, out string finalsuitename)
+        private static int GetFinalSuiteId(HierarchyEntry testhe, string suitename)
         {
-            finalsuitename = string.Empty;
+            
             foreach (var branch in testhe.Children)
             {
-                if (branch.SuiteTitle.Equals(suitename, StringComparison.InvariantCultureIgnoreCase))
+                if (branch.SuiteTitle.Equals(suitename, StringComparison.OrdinalIgnoreCase))
                 {
                     if (branch.Children.Count > 0)
                     {
@@ -1228,24 +807,24 @@ namespace MTMIntegration
                         while (temp.Children.Count > 0)
                         {
                             temp = temp.Children[0];
-                            finalsuitename = finalsuitename + "\\" + temp.SuiteTitle;
+                           
                         }
 
                         return temp.SuiteId;
                     }
-                    finalsuitename = branch.SuiteTitle;
+                   
                     return branch.SuiteId;
                 }
                 if (branch.Children.Count > 0)
                 {
-                    var suiteid = GetFinalSuiteId(branch, suitename, out finalsuitename);
+                    var suiteid = GetFinalSuiteId(branch, suitename);
                     if (suiteid > 0)
                     {
                         return suiteid;
                     }
                 }
             }
-            finalsuitename = string.Empty;
+            
             return -1;
         }
 

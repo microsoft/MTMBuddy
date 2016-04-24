@@ -28,21 +28,23 @@ namespace ReportingLayer
             //rawData = rawData.OrderBy(l => l.Priority).ThenBy(l => l.Outcome).ToList();
 
             var reportList = new List<TestList>();
-            var rd = new List<ResultSummary>();
+            new List<ResultSummary>();
             var filtereddata = Utilities.FilterData(rawData, module, moduleinclusion, tester, testerinclusion,
                 automationstatus);
 
             foreach (var res in filtereddata)
             {
-                TestList tlitem = new TestList();
-                tlitem.AutomationStatus = res.AutomationStatus;
-                tlitem.Date = res.Date;
-                tlitem.Outcome = res.Outcome;
-                tlitem.Priority = res.Priority;
-                tlitem.SuiteName = res.SuiteName;
-                tlitem.TcId = res.TCID;
-                tlitem.Tester = res.Tester;
-                tlitem.Title = res.Title;
+                TestList tlitem = new TestList
+                {
+                    AutomationStatus = res.AutomationStatus,
+                    Date = res.Date,
+                    Outcome = res.Outcome,
+                    Priority = res.Priority,
+                    SuiteName = res.SuiteName,
+                    TcId = res.TcId,
+                    Tester = res.Tester,
+                    Title = res.Title
+                };
                 reportList.Add(tlitem);
             }
             return reportList;

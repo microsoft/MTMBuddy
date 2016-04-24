@@ -28,24 +28,23 @@ namespace ReportingLayer
             bool moduleinclusion = true, string tester = "", bool testerinclusion = true,
             string automationstatus = "both")
         {
-            //rawData = rawData.OrderBy(l => l.Priority).ThenBy(l => l.Outcome).ToList();
+          
 
             var reportList = new List<SummaryReport>();
-            var rd = new List<ResultSummary>();
             var filtereddata = Utilities.FilterData(rawData, module, moduleinclusion, tester, testerinclusion,
                 automationstatus);
-            for (var i = 1; i <= 3; i++)
+            for (var i = 1; i <= 4; i++)
             {
                 var sr = new SummaryReport();
 
-                rd = filtereddata.Where(l => l.Priority.Equals(i)).ToList();
+                var rd = filtereddata.Where(l => l.Priority.Equals(i)).ToList();
                 sr.Total = rd.Count;
                 sr.Priority = "P" + i;
                 sr.LastRefreshDate = DateTime.Now.ToString(@"dMMyyyy", CultureInfo.InvariantCulture);
-                sr.Active = rd.Where(l => l.Outcome.Equals("Active")).Count();
-                sr.Passed = rd.Where(l => l.Outcome.Equals("Passed")).Count();
-                sr.Failed = rd.Where(l => l.Outcome.Equals("Failed")).Count();
-                sr.Blocked = rd.Where(l => l.Outcome.Equals("Blocked")).Count();
+                sr.Active = rd.Count(l => l.Outcome.Equals("Active"));
+                sr.Passed = rd.Count(l => l.Outcome.Equals("Passed"));
+                sr.Failed = rd.Count(l => l.Outcome.Equals("Failed"));
+                sr.Blocked = rd.Count(l => l.Outcome.Equals("Blocked"));
                 if (sr.Passed + sr.Failed > 0)
                 {
                     sr.FailRate = (float) Math.Round((float) sr.Failed/(sr.Passed + sr.Failed)*100, 2);
@@ -56,14 +55,16 @@ namespace ReportingLayer
                 reportList.Add(sr);
             }
 
-            var sr1 = new SummaryReport();
-            sr1.Priority = "Total";
-            sr1.LastRefreshDate = DateTime.Now.ToString(@"dMMyyyy", CultureInfo.InvariantCulture);
-            sr1.Total = filtereddata.Count;
-            sr1.Active = filtereddata.Where(l => l.Outcome.Equals("Active")).Count();
-            sr1.Passed = filtereddata.Where(l => l.Outcome.Equals("Passed")).Count();
-            sr1.Failed = filtereddata.Where(l => l.Outcome.Equals("Failed")).Count();
-            sr1.Blocked = filtereddata.Where(l => l.Outcome.Equals("Blocked")).Count();
+            var sr1 = new SummaryReport
+            {
+                Priority = "Total",
+                LastRefreshDate = DateTime.Now.ToString(@"dMMyyyy", CultureInfo.InvariantCulture),
+                Total = filtereddata.Count,
+                Active = filtereddata.Count(l => l.Outcome.Equals("Active")),
+                Passed = filtereddata.Count(l => l.Outcome.Equals("Passed")),
+                Failed = filtereddata.Count(l => l.Outcome.Equals("Failed")),
+                Blocked = filtereddata.Count(l => l.Outcome.Equals("Blocked"))
+            };
             if (sr1.Passed + sr1.Failed > 0)
             {
                 sr1.FailRate = (float) Math.Round((float) sr1.Failed/(sr1.Passed + sr1.Failed)*100, 2);

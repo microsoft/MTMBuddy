@@ -10,7 +10,7 @@ namespace MTMLiveReporting.Content
     /// <summary>
     ///     Interaction logic for Diagnostic.xaml
     /// </summary>
-    public partial class Diagnostic : UserControl
+    public partial class Diagnostic 
     {
         public Diagnostic()
         {

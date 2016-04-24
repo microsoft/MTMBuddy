@@ -56,7 +56,6 @@ namespace ReportingLayer
 
 
             var modreplist = new List<ModuleLevelReport>();
-            var rd = new List<ResultSummary>();
             var filtereddata = Utilities.FilterData(rawData, module, moduleinclusion, tester, testerinclusion,
                 automationstatus);
 
@@ -66,18 +65,17 @@ namespace ReportingLayer
 
             foreach (var repmodule in modules)
             {
-                var modrep = new ModuleLevelReport();
-                modrep.Module = repmodule;
+                var modrep = new ModuleLevelReport {Module = repmodule};
                 var moduledata = Utilities.FilterData(rawData, repmodule, true, tester, testerinclusion,
-                    automationstatus);
+                    automationstatus,true);
                 //Overall data
                 modrep.Total = moduledata.Count;
                 modrep.AutomationRatio =
-                    (float) Math.Round((float) moduledata.Where(l => l.AutomationStatus).Count()*100/modrep.Total, 2);
-                modrep.Active = moduledata.Where(l => l.Outcome.Equals("Active")).Count();
-                modrep.Passed = moduledata.Where(l => l.Outcome.Equals("Passed")).Count();
-                modrep.Failed = moduledata.Where(l => l.Outcome.Equals("Failed")).Count();
-                modrep.Blocked = moduledata.Where(l => l.Outcome.Equals("Blocked")).Count();
+                    (float) Math.Round((float) moduledata.Count(l => l.AutomationStatus)*100/modrep.Total, 2);
+                modrep.Active = moduledata.Count(l => l.Outcome.Equals("Active"));
+                modrep.Passed = moduledata.Count(l => l.Outcome.Equals("Passed"));
+                modrep.Failed = moduledata.Count(l => l.Outcome.Equals("Failed"));
+                modrep.Blocked = moduledata.Count(l => l.Outcome.Equals("Blocked"));
                 if (modrep.Passed + modrep.Failed > 0)
                 {
                     modrep.FailRate = (float) Math.Round((float) modrep.Failed/(modrep.Passed + modrep.Failed)*100, 2);
@@ -86,12 +84,12 @@ namespace ReportingLayer
                         (float) Math.Round((float) (modrep.Passed + modrep.Failed)/modrep.Total*100, 2);
                 }
                 //P1
-                rd = moduledata.Where(l => l.Priority.Equals(1)).ToList();
+                var rd = moduledata.Where(l => l.Priority.Equals(1)).ToList();
                 modrep.P1Total = rd.Count;
-                modrep.P1Active = rd.Where(l => l.Outcome.Equals("Active")).Count();
-                modrep.P1Passed = rd.Where(l => l.Outcome.Equals("Passed")).Count();
-                modrep.P1Failed = rd.Where(l => l.Outcome.Equals("Failed")).Count();
-                modrep.P1Blocked = rd.Where(l => l.Outcome.Equals("Blocked")).Count();
+                modrep.P1Active = rd.Count(l => l.Outcome.Equals("Active"));
+                modrep.P1Passed = rd.Count(l => l.Outcome.Equals("Passed"));
+                modrep.P1Failed = rd.Count(l => l.Outcome.Equals("Failed"));
+                modrep.P1Blocked = rd.Count(l => l.Outcome.Equals("Blocked"));
                 if (modrep.P1Passed + modrep.P1Failed > 0)
                 {
                     modrep.P1FailRate =
@@ -105,10 +103,10 @@ namespace ReportingLayer
                 //P2
                 rd = moduledata.Where(l => l.Priority.Equals(2)).ToList();
                 modrep.P2Total = rd.Count;
-                modrep.P2Active = rd.Where(l => l.Outcome.Equals("Active")).Count();
-                modrep.P2Passed = rd.Where(l => l.Outcome.Equals("Passed")).Count();
-                modrep.P2Failed = rd.Where(l => l.Outcome.Equals("Failed")).Count();
-                modrep.P2Blocked = rd.Where(l => l.Outcome.Equals("Blocked")).Count();
+                modrep.P2Active = rd.Count(l => l.Outcome.Equals("Active"));
+                modrep.P2Passed = rd.Count(l => l.Outcome.Equals("Passed"));
+                modrep.P2Failed = rd.Count(l => l.Outcome.Equals("Failed"));
+                modrep.P2Blocked = rd.Count(l => l.Outcome.Equals("Blocked"));
                 if (modrep.P2Passed + modrep.P2Failed > 0)
                 {
                     modrep.P2FailRate =
@@ -121,10 +119,10 @@ namespace ReportingLayer
                 //P3
                 rd = moduledata.Where(l => l.Priority.Equals(3)).ToList();
                 modrep.P3Total = rd.Count;
-                modrep.P3Active = rd.Where(l => l.Outcome.Equals("Active")).Count();
-                modrep.P3Passed = rd.Where(l => l.Outcome.Equals("Passed")).Count();
-                modrep.P3Failed = rd.Where(l => l.Outcome.Equals("Failed")).Count();
-                modrep.P3Blocked = rd.Where(l => l.Outcome.Equals("Blocked")).Count();
+                modrep.P3Active = rd.Count(l => l.Outcome.Equals("Active"));
+                modrep.P3Passed = rd.Count(l => l.Outcome.Equals("Passed"));
+                modrep.P3Failed = rd.Count(l => l.Outcome.Equals("Failed"));
+                modrep.P3Blocked = rd.Count(l => l.Outcome.Equals("Blocked"));
                 if (modrep.P3Passed + modrep.P3Failed > 0)
                 {
                     modrep.P3FailRate =

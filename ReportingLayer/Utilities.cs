@@ -16,20 +16,20 @@ namespace ReportingLayer
             var issuelist = new List<ResultSummary>();
             issuelist.Clear();
             issuelist.AddRange(rawData.Where(p => p.Priority < 1).ToList());
-            issuelist.AddRange(rawData.Where(p => p.Priority > 3).ToList());
+            issuelist.AddRange(rawData.Where(p => p.Priority > 4).ToList());
             issuelist.AddRange(
                 rawData.Where(
                     p =>
-                        !(p.Outcome.Equals("Active", StringComparison.InvariantCultureIgnoreCase) ||
-                          p.Outcome.Equals("Passed", StringComparison.InvariantCultureIgnoreCase) ||
-                          p.Outcome.Equals("Failed", StringComparison.InvariantCultureIgnoreCase) ||
-                          p.Outcome.Equals("Blocked", StringComparison.InvariantCultureIgnoreCase))).ToList());
+                        !(p.Outcome.Equals("Active", StringComparison.OrdinalIgnoreCase) ||
+                          p.Outcome.Equals("Passed", StringComparison.OrdinalIgnoreCase) ||
+                          p.Outcome.Equals("Failed", StringComparison.OrdinalIgnoreCase) ||
+                          p.Outcome.Equals("Blocked", StringComparison.OrdinalIgnoreCase))).ToList());
             return issuelist;
         }
 
         public static List<ResultSummary> FilterData(List<ResultSummary> rawData, string module = "",
             bool moduleinclusion = true, string tester = "", bool testerinclusion = true,
-            string automationstatus = "BOTH")
+            string automationstatus = "BOTH",bool exactmatch=false)
         {
             var filtereddata = new List<ResultSummary>();
 
@@ -41,15 +41,9 @@ namespace ReportingLayer
 
             foreach (var resitem in rawData)
             {
-                var foundflag = false;
-                foreach (var inclusionmodule in inclusionmodules)
-                {
-                    if (resitem.SuiteName.ToUpperInvariant().Contains(inclusionmodule.ToUpperInvariant()))
-                    {
-                        foundflag = true;
-                        break;
-                    }
-                }
+                var foundflag = inclusionmodules.Any(inclusionmodule => resitem.SuiteName.ToUpperInvariant().Contains(inclusionmodule.ToUpperInvariant()));
+                if(exactmatch)
+                    foundflag = inclusionmodules.Any(inclusionmodule => resitem.SuiteName.ToUpperInvariant().Equals(inclusionmodule,StringComparison.OrdinalIgnoreCase ));
                 if (!string.IsNullOrEmpty(module))
                 {
                     if (!foundflag && !moduleinclusion)

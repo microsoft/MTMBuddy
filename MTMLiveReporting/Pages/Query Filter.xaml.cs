@@ -5,21 +5,21 @@
 using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using Microsoft.Win32;
 using MTMIntegration;
 using ReportingLayer;
-using Application = Microsoft.Office.Interop.Excel.Application;
-using WinForm = System.Windows.Forms;
+
 
 namespace MTMLiveReporting.Pages
 {
     /// <summary>
     ///     Interaction logic for Query_Filter.xaml
     /// </summary>
-    public partial class QueryFilter : UserControl
+    public partial class QueryFilter 
     {
         private int _planId;
 
@@ -37,36 +37,20 @@ namespace MTMLiveReporting.Pages
 
             try
             {
-                var actions = new List<string>();
-                actions.Add("Assign Tester");
-                actions.Add("Playlist");
-                actions.Add("Result Update");
+                var actions = new List<string> {"Assign Tester", "Playlist", "Result Update"};
 
                 TesterAction.ItemsSource = actions;
 
 
                 TesterAction.SelectedIndex = 0;
-                var automationStatus = new List<string>();
-                automationStatus.Add("Both");
-                automationStatus.Add("Automated");
-                automationStatus.Add("Manual");
+                var automationStatus = new List<string> {"Both", "Automated", "Manual"};
                 CmbAutomationStaus.ItemsSource = automationStatus;
-                var priorities = new List<string>();
-                priorities.Add("All");
-                priorities.Add("1");
-                priorities.Add("2");
-                priorities.Add("3");
-                priorities.Add("4");
+                var priorities = new List<string> {"All", "1", "2", "3", "4"};
                 CmbPriority.ItemsSource = priorities;
-                var outcomes = new List<string>();
-                outcomes.Add("All");
-                outcomes.Add("Active");
-                outcomes.Add("Blocked");
-                outcomes.Add("Failed");
-                outcomes.Add("Passed");
-                outcomes.Add("In progress");
+                var outcomes = new List<string> {"All", "Active", "Blocked", "Failed", "Passed", "In progress"};
                 CmbOutcome.ItemsSource = outcomes;
 
+                //Valid Outcomes are used for result update.
                 var validOutcomes = outcomes;
 
                 validOutcomes.Remove("All");
@@ -76,8 +60,7 @@ namespace MTMLiveReporting.Pages
                 
               
                 MtmInteraction.Getwpfsuitetree(int.Parse(ConfigurationManager.AppSettings["TestPlanID"]), TvMtm, true);
-                var tester = new List<string>();
-                tester = MtmInteraction.GetTester();
+                var tester = MtmInteraction.GetTester();
                
                 tester.Sort();
                 TesterName.ItemsSource = tester;
@@ -93,18 +76,16 @@ namespace MTMLiveReporting.Pages
         }
 
 
-        public void getlist_Click(object sender, RoutedEventArgs e)
+        public void GetPlanDetails_Click(object sender, RoutedEventArgs e)
         {
             try {
-                var plans = new Dictionary<int, string>();
-                plans = MtmInteraction.GetPlanIdsDictionary();
+                
 
                 if (int.TryParse(TxtPlanId.Text, out _planId))
                 {
                     TvMtm.Items.Clear();
                     MtmInteraction.Getwpfsuitetree(_planId, TvMtm, true);
-                    var tester = new List<string>();
-                    tester = MtmInteraction.GetTester();
+                    var tester = MtmInteraction.GetTester();
                     tester.Sort();
                     TesterName.ItemsSource = tester;
                 }
@@ -125,13 +106,13 @@ namespace MTMLiveReporting.Pages
 }
 
       
-        public void getFilter_Click(object sender, RoutedEventArgs e)
+        public void getResults_Click(object sender, RoutedEventArgs e)
         {
             try
             {
+                //Get data for the selected suite
                 var selectedItem = (TreeViewItem) TvMtm.SelectedItem;
-                if (_suiteid != int.Parse(selectedItem.Tag.ToString()))
-                {
+               
                     _suiteid = int.Parse(selectedItem.Tag.ToString());
                     try
                     {
@@ -150,19 +131,19 @@ namespace MTMLiveReporting.Pages
                     {
                         Mouse.OverrideCursor = null;
                     }
-                }
-                var filters = new List<MtmInteraction.Filter>();
+                //Add Filters
+                var filters = new List<Filter>();
 
-                var moduleinclusion = ChkModuleInclusion.IsChecked.Value;
+                var moduleinclusion = ChkModuleInclusion.IsChecked != null && ChkModuleInclusion.IsChecked.Value;
                 var modulefilter = Txtmodulefilter.Text;
-                var testerinclusion = ChkTesterInclusion.IsChecked.Value;
+                var testerinclusion = ChkTesterInclusion.IsChecked != null && ChkTesterInclusion.IsChecked.Value;
                 var testerfilter = Txttesterfilter.Text;
                 var automationstatus = CmbAutomationStaus.SelectedItem.ToString();
                 if (!string.IsNullOrEmpty(TxtTitlefilter.Text))
                 {
                     
-                    var titleFilter = new MtmInteraction.Filter();
-                    if (ChkTitleInclusion.IsChecked.Value)
+                    var titleFilter = new Filter();
+                    if (ChkTitleInclusion.IsChecked != null && ChkTitleInclusion.IsChecked.Value)
                     {
                         titleFilter.Op = "Contains";
                     }
@@ -176,20 +157,16 @@ namespace MTMLiveReporting.Pages
                 }
                 if (!CmbPriority.SelectedValue.ToString().Equals("All", StringComparison.InvariantCultureIgnoreCase))
                 {
-                   
-                    var titleFilter = new MtmInteraction.Filter();
-                    
-                    titleFilter.Name = "Priority";
-                    titleFilter.Value = CmbPriority.SelectedValue.ToString();
+
+                    var titleFilter = new Filter {Name = "Priority", Value = CmbPriority.SelectedValue.ToString()};
+
                     filters.Add(titleFilter);
                 }
                 if (!CmbOutcome.SelectedValue.ToString().Equals("All", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    
-                    var titleFilter = new MtmInteraction.Filter();
 
-                    titleFilter.Name = "Outcome";
-                    titleFilter.Value = CmbOutcome.SelectedValue.ToString();
+                    var titleFilter = new Filter {Name = "Outcome", Value = CmbOutcome.SelectedValue.ToString()};
+
                     filters.Add(titleFilter);
                 }
 
@@ -209,22 +186,15 @@ namespace MTMLiveReporting.Pages
             finally
             {
                 Mouse.OverrideCursor = null;
-                ;
+                
             }
         }
 
         private void Assign_Tester()
         {
             try {
-                var name = TesterName.SelectedItem.ToString();
-                var selectedId = new List<int>();
-                foreach (var i in _queryResult)
-                {
-                    if (i.Selected)
-                    {
-                        selectedId.Add(i.TcId);
-                    }
-                }
+                var name = TesterName.Text;
+                var selectedId = (from i in _queryResult where i.Selected select i.TcId).ToList();
                 if (selectedId.Count == 0)
                 {
                     MessageBox.Show("Hey! It seems you forgot to select cases");
@@ -239,12 +209,12 @@ namespace MTMLiveReporting.Pages
                 MessageBox.Show(
                     "It seems something has gone wrong. Please send us the below information so that we can resolve the issue." +
                     Environment.NewLine + exp.Message, "OOPS!", MessageBoxButton.OK, MessageBoxImage.Warning);
-                DataGetter.Diagnostic.AppendLine("Error while exporting to Excel: " + exp.Message);
+                DataGetter.Diagnostic.AppendLine("Error while Assigning Testers: " + exp.Message);
             }
         }
         
 
-        private void Hyperlink_Click(object sender, RoutedEventArgs e)
+        private void SelectAll_Click(object sender, RoutedEventArgs e)
         {
             try {
                 foreach (var i in _queryResult)
@@ -260,7 +230,7 @@ namespace MTMLiveReporting.Pages
                 MessageBox.Show(
                     "It seems something has gone wrong. Please send us the below information so that we can resolve the issue." +
                     Environment.NewLine + exp.Message, "OOPS!", MessageBoxButton.OK, MessageBoxImage.Warning);
-                DataGetter.Diagnostic.AppendLine("Error while exporting to Excel: " + exp.Message);
+                DataGetter.Diagnostic.AppendLine("Select All: " + exp.Message);
             }
 }
 
@@ -271,42 +241,32 @@ namespace MTMLiveReporting.Pages
                 //string name = testerName.SelectedItem.ToString();
                 Mouse.OverrideCursor = Cursors.Wait;
                 var errflag = false;
-                foreach (var i in _queryResult)
+                foreach (var i in _queryResult.Where(i => i.Selected))
                 {
-                    if (i.Selected)
+                    try
                     {
-                        try
-                        {
-                            MTMIntegration.MtmInteraction.UpdateResult(i.TcId.ToString(), "Updated from MTM Buddy",
-                                i.SuiteName.Substring(i.SuiteName.LastIndexOf("\\") + 1), false,
-                                Resultoptions.SelectedValue.ToString());
-                        }
-                        catch (Exception ex)
-                        {
-                            DataGetter.Diagnostic.AppendLine("Error occured in migrating testcase " + i.TcId);
-                            DataGetter.Diagnostic.AppendLine(ex.Message);
-                            DataGetter.Diagnostic.AppendLine("---------------------------------------------------");
-                            errflag = true;
+                        MtmInteraction.UpdateResult(i.TcId.ToString(), "Updated from MTM Buddy",
+                            i.SuiteName.Substring(i.SuiteName.LastIndexOf("\\",StringComparison.OrdinalIgnoreCase ) + 1), false,
+                            Resultoptions.SelectedValue.ToString());
+                    }
+                    catch (Exception ex)
+                    {
+                        DataGetter.Diagnostic.AppendLine("Error occured in updating results " + i.TcId);
+                        DataGetter.Diagnostic.AppendLine(ex.Message);
+                        DataGetter.Diagnostic.AppendLine("---------------------------------------------------");
+                        errflag = true;
                         
-                        }
                     }
                 }
-                if (errflag)
-                {
-                    MessageBox.Show("Sorry! Something went wrong. Please check the diagnostic log for details.");
-                }
-                else
-                {
-                    MessageBox.Show("All done");
-                }
-
-                
+                MessageBox.Show(errflag
+                    ? "Sorry! Something went wrong. Please check the diagnostic log for details."
+                    : "All done");
             }
             catch (Exception ex)
             {
                 MessageBox.Show("Sorry! Something went wrong. Please send the diagnostic log to us.");
                
-                DataGetter.Diagnostic.AppendLine("Error occured in migrating testcases.");
+                DataGetter.Diagnostic.AppendLine("Error occured in updating results.");
                 DataGetter.Diagnostic.AppendLine(ex.Message);
                 DataGetter.Diagnostic.AppendLine("---------------------------------------------------");
                 
@@ -320,7 +280,7 @@ namespace MTMLiveReporting.Pages
 
         
 
-        private void Button_Click(object sender, RoutedEventArgs e)
+        private void ActionButton_Click(object sender, RoutedEventArgs e)
         {
             try { 
             Mouse.OverrideCursor = Cursors.Wait;
@@ -351,7 +311,7 @@ namespace MTMLiveReporting.Pages
                 MessageBox.Show(
                     "It seems something has gone wrong. Please send us the below information so that we can resolve the issue." +
                     Environment.NewLine + exp.Message, "OOPS!", MessageBoxButton.OK, MessageBoxImage.Warning);
-                DataGetter.Diagnostic.AppendLine("Error while exporting to Excel: " + exp.Message);
+                DataGetter.Diagnostic.AppendLine("Error while "+TesterAction.SelectedItem+": " + exp.Message);
             }
         }
 
@@ -360,14 +320,7 @@ namespace MTMLiveReporting.Pages
             try
             {
                 //string name = testerName.SelectedItem.ToString();
-                var selectedId = new List<int>();
-                foreach (var i in _queryResult)
-                {
-                    if (i.Selected && i.AutomationStatus)
-                    {
-                        selectedId.Add(i.TcId);
-                    }
-                }
+                var selectedId = (from i in _queryResult where i.Selected && i.AutomationStatus select i.TcId).ToList();
 
                 if (selectedId.Count == 0)
                 {
@@ -375,19 +328,22 @@ namespace MTMLiveReporting.Pages
                     return;
                 }
 
-                var dlg = new SaveFileDialog();
-                dlg.FileName = "Playlist1"; // Default file name
-                dlg.DefaultExt = ".playlist"; // Default file extension
-                dlg.Filter = "Playlist (.playlist)|*.playlist"; // Filter files by extension
+                var dlg = new SaveFileDialog
+                {
+                    FileName = "Playlist1",
+                    DefaultExt = ".playlist",
+                    Filter = "Playlist (.playlist)|*.playlist"
+                };
+               
 
                 var result = dlg.ShowDialog();
-                var fileLocation = "";
+              
                 if (result == true)
                 {
-                    fileLocation = dlg.FileName;
+                    var fileLocation = dlg.FileName;
                     FilePath.Text = fileLocation;
                     Mouse.OverrideCursor = Cursors.Wait;
-                    MtmInteraction.CreatePlaylist(_suiteid, selectedId, fileLocation);
+                    MtmInteraction.CreatePlaylist( selectedId, fileLocation);
                     
                     DataGetter.Diagnostic.AppendLine("Total time taken for playlist generation: " +
                                                      (MtmInteraction.AutomationPlaylistAddition +
@@ -425,7 +381,7 @@ namespace MTMLiveReporting.Pages
                 
                 Resultoptions.Visibility = Visibility.Hidden;
                 TestActionsoptions.Visibility = Visibility.Hidden;
-                //filePath.Visibility =  System.Windows.Visibility.Hidden;
+                
                 ActionButton.Content = "Assign";
             }
             else if (TesterAction.SelectedItem.ToString().Equals("Playlist", StringComparison.InvariantCultureIgnoreCase))
@@ -435,7 +391,7 @@ namespace MTMLiveReporting.Pages
                
                 Resultoptions.Visibility = Visibility.Hidden;
                 TestActionsoptions.Visibility = Visibility.Hidden;
-                //filePath.Visibility = System.Windows.Visibility.Visible;
+              
                 ActionButton.Content = "Generate";
             }
            
@@ -452,7 +408,7 @@ namespace MTMLiveReporting.Pages
            
         }
 
-        private void Hyperlink_Click_1(object sender, RoutedEventArgs e)
+        private void ExportToExcel_Click(object sender, RoutedEventArgs e)
         {
 
             try
@@ -462,8 +418,10 @@ namespace MTMLiveReporting.Pages
                     MessageBox.Show("Nothing to export.Please generate a report", "OOPS!", MessageBoxButton.OK);
                     return;
                 }
-                var expExlSum = new ExportToExcel<QueryInterface, List<QueryInterface>>();
-                expExlSum.DataToExport = (List<QueryInterface>)ResultDataGrid.ItemsSource;
+                var expExlSum = new ExportToExcel<QueryInterface>
+                {
+                    DataToExport = (List<QueryInterface>) ResultDataGrid.ItemsSource
+                };
                 expExlSum.GenerateExcel();
             }
             catch (Exception exp)

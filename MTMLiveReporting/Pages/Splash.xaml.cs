@@ -14,7 +14,7 @@ namespace MTMLiveReporting
     /// <summary>
     ///     Interaction logic for Splash.xaml
     /// </summary>
-    public partial class Splash : UserControl
+    public partial class Splash 
     {
         public Splash()
         {
@@ -31,14 +31,7 @@ namespace MTMLiveReporting
             var frame = NavigationHelper.FindFrame(null, this);
             if (frame != null)
             {
-                if (DataGetter.FirstRun)
-                {
-                    frame.Source = new Uri("Pages/Settings.xaml", UriKind.Relative);
-                }
-                else
-                {
-                    frame.Source = new Uri("Pages/Home.xaml", UriKind.Relative);
-                }
+                frame.Source = DataGetter.FirstRun ? new Uri("Pages/Settings.xaml", UriKind.Relative) : new Uri("Pages/Home.xaml", UriKind.Relative);
             }
         }
 

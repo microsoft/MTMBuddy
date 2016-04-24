@@ -4,14 +4,13 @@
 //------------------------------------------------------------------------------------------------------- 
 using System;
 using System.Configuration;
-using System.Linq;
-using System.Security.Principal;
+
 using System.Windows;
-using System.Windows.Forms;
+
 using MTMIntegration;
 
 using MessageBox = System.Windows.MessageBox;
-using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
+
 using UserControl = System.Windows.Controls.UserControl;
 
 namespace MTMLiveReporting
@@ -19,8 +18,8 @@ namespace MTMLiveReporting
     /// <summary>
     ///     Interaction logic for SettingsVSTF.xaml
     /// </summary>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "VSTF")]
-    public partial class SettingsVstf : UserControl
+   
+    public partial class SettingsVstf 
     {
         public SettingsVstf()
         {
@@ -45,7 +44,7 @@ namespace MTMLiveReporting
        
             try
             {
-                MtmInteraction.Initialize_VSTF(new Uri(ConfigurationManager.AppSettings["TFSUrl"]),
+                MtmInteraction.InitializeVstfConnection(new Uri(ConfigurationManager.AppSettings["TFSUrl"]),
                     ConfigurationManager.AppSettings["TeamProject"],
                     int.Parse(ConfigurationManager.AppSettings["TestPlanID"]));
                 DataGetter.SaveConfig("TFSUrl", TxtTfsUrl.Text);

@@ -29,15 +29,24 @@ namespace ReportingLayer
 
         public static List<QueryInterface> Generate(List<ResultSummary> rawData, string module = "",
             bool moduleinclusion = true, string tester = "", bool testerinclusion = true,
-            string automationstatus = "both", List<MtmInteraction.Filter> filterCriteria = null)
+            string automationstatus = "both", List<Filter> filterCriteria = null)
         {
-            var reportList = new List<QueryInterface>();
-            var rd = new List<ResultSummary>();
             var filtereddata = Utilities.FilterData(rawData, module, moduleinclusion, tester, testerinclusion,
                 automationstatus);
 
             var queryResult = filtereddata;
 
+            if (filterCriteria == null)
+                return queryResult.Select(res => new QueryInterface
+                {
+                    AutomationStatus = res.AutomationStatus,
+                    Outcome = res.Outcome,
+                    Priority = res.Priority,
+                    SuiteName = res.SuiteName,
+                    TcId = res.TcId,
+                    Tester = res.Tester,
+                    Title = res.Title
+                }).ToList();
             foreach (var filter in filterCriteria)
             {
                 switch (filter.Name)
@@ -48,13 +57,13 @@ namespace ReportingLayer
 
                         break;
                     case "Title":
-                        if (filter.Op.Equals("Contains", StringComparison.InvariantCultureIgnoreCase))
+                        if (filter.Op.Equals("Contains", StringComparison.OrdinalIgnoreCase))
                         {
                             queryResult =
                                 queryResult.Where(
                                     p => p.Title.ToLowerInvariant().Contains(filter.Value.ToLowerInvariant())).ToList();
                         }
-                        else if (filter.Op.Equals("Not Contains", StringComparison.InvariantCultureIgnoreCase))
+                        else if (filter.Op.Equals("Not Contains", StringComparison.OrdinalIgnoreCase))
                         {
                             queryResult = queryResult.Where(p => !p.Title.Contains(filter.Value)).ToList();
                         }
@@ -62,25 +71,23 @@ namespace ReportingLayer
                     case "Outcome":
                         queryResult =
                             queryResult.Where(
-                                p => p.Outcome.Equals(filter.Value, StringComparison.InvariantCultureIgnoreCase))
+                                p => p.Outcome.Equals(filter.Value, StringComparison.OrdinalIgnoreCase))
                                 .ToList();
                         break;
                 }
             }
 
-            foreach (var res in queryResult)
+            return queryResult.Select(res => new QueryInterface
             {
-                var tlitem = new QueryInterface();
-                tlitem.AutomationStatus = res.AutomationStatus;
-                tlitem.Outcome = res.Outcome;
-                tlitem.Priority = res.Priority;
-                tlitem.SuiteName = res.SuiteName;
-                tlitem.TcId = res.TCID;
-                tlitem.Tester = res.Tester;
-                tlitem.Title = res.Title;
-                reportList.Add(tlitem);
-            }
-            return reportList;
+                AutomationStatus = res.AutomationStatus, Outcome = res.Outcome, Priority = res.Priority, SuiteName = res.SuiteName, TcId = res.TcId, Tester = res.Tester, Title = res.Title
+            }).ToList();
         }
+    }
+
+    public class Filter
+    {
+        public string Name { get; set; }
+        public string Op { get; set; }
+        public string Value { get; set; }
     }
 }
