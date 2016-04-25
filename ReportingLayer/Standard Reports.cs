@@ -22,7 +22,7 @@ namespace ReportingLayer
         public float PassRate { get; set; }
         public float ProgressRate { get; set; }
 
-        public string LastRefreshDate { get; set; }
+      
     
         public static List<SummaryReport> Generate(List<ResultSummary> rawData, string module = "",
             bool moduleinclusion = true, string tester = "", bool testerinclusion = true,
@@ -40,7 +40,7 @@ namespace ReportingLayer
                 var rd = filtereddata.Where(l => l.Priority.Equals(i)).ToList();
                 sr.Total = rd.Count;
                 sr.Priority = "P" + i;
-                sr.LastRefreshDate = DateTime.Now.ToString(@"dMMyyyy", CultureInfo.InvariantCulture);
+             
                 sr.Active = rd.Count(l => l.Outcome.Equals("Active"));
                 sr.Passed = rd.Count(l => l.Outcome.Equals("Passed"));
                 sr.Failed = rd.Count(l => l.Outcome.Equals("Failed"));
@@ -58,7 +58,7 @@ namespace ReportingLayer
             var sr1 = new SummaryReport
             {
                 Priority = "Total",
-                LastRefreshDate = DateTime.Now.ToString(@"dMMyyyy", CultureInfo.InvariantCulture),
+               
                 Total = filtereddata.Count,
                 Active = filtereddata.Count(l => l.Outcome.Equals("Active")),
                 Passed = filtereddata.Count(l => l.Outcome.Equals("Passed")),
