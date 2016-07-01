@@ -22,7 +22,7 @@ namespace MTMLiveReporting
 
         public static bool FirstRun = false;
 
-      
+        public static ConcurrentBag<TestFailureDetail> FailureDetails = new ConcurrentBag<TestFailureDetail>(); 
 
         public static StringBuilder Diagnostic = new StringBuilder();
 
@@ -31,9 +31,10 @@ namespace MTMLiveReporting
         public static List<ResultSummary> GetResultSummaryList(int suiteId, string suiteName)
         {
             var resDetail = new ConcurrentBag<ResultSummary>();
-            Stp.Restart();
+            FailureDetails = new ConcurrentBag<TestFailureDetail>();
+        Stp.Restart();
             MtmInteraction.ClearPerformanceCounters();
-            MtmInteraction.GetResultDetails(suiteId, resDetail, suiteName);
+            MtmInteraction.GetResultDetails(suiteId, resDetail, suiteName, FailureDetails);
             Stp.Stop();
             Diagnostic.AppendLine("Fetch Suite data for " + suiteName + "-" + suiteId + ":    " +
                                   Stp.Elapsed.TotalSeconds);

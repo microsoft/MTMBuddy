@@ -60,7 +60,8 @@ namespace MTMLiveReporting.Pages
                 
                
                 "Automation",
-                "TestList"
+                "TestList",
+                "TestFailures"
             };
             CmbReportSelection.ItemsSource = reports;
             CmbReportSelection.SelectedIndex = 0;
@@ -137,6 +138,13 @@ namespace MTMLiveReporting.Pages
                             DataToExport = (List<AutomationReport>) ResultDataGrid.ItemsSource
                         };
                         alist.GenerateExcel();
+                        break;
+                    case "TESTFAILURES":
+                        var flist = new ExportToExcel<TestFailureDetail >
+                        {
+                            DataToExport = (List<TestFailureDetail>)ResultDataGrid.ItemsSource
+                        };
+                        flist.GenerateExcel();
                         break;
                 }
             }
@@ -217,8 +225,9 @@ namespace MTMLiveReporting.Pages
                             testerfilter, testerinclusion, automationstatus);
                        
                         break;
-                   
-                    
+                    case "TESTFAILURES":
+                        ResultDataGrid.ItemsSource = DataGetter.FailureDetails;
+                        break;
                        
                        
                     case "TESTLIST":

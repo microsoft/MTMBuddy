@@ -37,7 +37,7 @@ namespace MTMLiveReporting.Pages
 
             try
             {
-                var actions = new List<string> {"Assign Tester", "Playlist", "Result Update"};
+                var actions = new List<string> {"Assign Tester", "Playlist", "Result Update","Result History"};
 
                 TesterAction.ItemsSource = actions;
 
@@ -212,7 +212,41 @@ namespace MTMLiveReporting.Pages
                 DataGetter.Diagnostic.AppendLine("Error while Assigning Testers: " + exp.Message);
             }
         }
-        
+
+
+        private void FetchHistory()
+        {
+            try
+            {
+                Mouse.OverrideCursor = Cursors.Wait;
+                var selectedId = (from i in _queryResult where i.Selected select i.TcId).ToList();
+                if (selectedId.Count == 0)
+                {
+                    MessageBox.Show("Hey! It seems you forgot to select cases", "OOPS!", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+                if (MtmInteraction.PlanIdsDictionary.Count*selectedId.Count > 100)
+                    MessageBox.Show("We are going through " + MtmInteraction.PlanIdsDictionary.Count +
+                                    " plans\r\n and searching for " + selectedId.Count + " cases to get the history" +
+                                    Environment.NewLine + "This'll take a while so please bear with us","MTMBuddy",MessageBoxButton.OK,MessageBoxImage.Information);
+                List<ResultHistorySummary> reshistory = MtmInteraction.GetResultHistory(selectedId);
+                ResultDataGrid.ItemsSource = reshistory;
+
+
+            }
+            catch (Exception exp)
+            {
+                MessageBox.Show(
+                    "It seems something has gone wrong. Please send us the below information so that we can resolve the issue." +
+                    Environment.NewLine + exp.Message, "OOPS!", MessageBoxButton.OK, MessageBoxImage.Warning);
+                DataGetter.Diagnostic.AppendLine("Error while Assigning Testers: " + exp.Message);
+            }
+            finally
+            {
+                Mouse.OverrideCursor = null;
+            }
+        }
+
 
         private void SelectAll_Click(object sender, RoutedEventArgs e)
         {
@@ -302,9 +336,13 @@ namespace MTMLiveReporting.Pages
             {
                 Updateresults();
             }
+                else if (TesterAction.SelectedItem.ToString()
+                    .Equals("Result History", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    FetchHistory();
+                }
 
-           
-            Mouse.OverrideCursor = Cursors.Arrow;
+                    Mouse.OverrideCursor = Cursors.Arrow;
             }
             catch (Exception exp)
             {
@@ -405,7 +443,16 @@ namespace MTMLiveReporting.Pages
                 TestActionsoptions.Visibility = Visibility.Hidden;
                 ActionButton.Content = "Update";
             }
-           
+            else if (TesterAction.SelectedItem.ToString()
+                .Equals("Result History", StringComparison.InvariantCultureIgnoreCase))
+            {
+                TesterName.Visibility = Visibility.Hidden;
+                LblActionParam.Visibility = Visibility.Hidden ;
+                LblActionParam.Text = "Outcome";
+                Resultoptions.Visibility = Visibility.Hidden ;
+                TestActionsoptions.Visibility = Visibility.Hidden;
+                ActionButton.Content = "Generate";
+            }
         }
 
         private void ExportToExcel_Click(object sender, RoutedEventArgs e)
@@ -418,11 +465,23 @@ namespace MTMLiveReporting.Pages
                     MessageBox.Show("Nothing to export.Please generate a report", "OOPS!", MessageBoxButton.OK);
                     return;
                 }
-                var expExlSum = new ExportToExcel<QueryInterface>
+                if (TesterAction.SelectedItem.ToString()
+                .Equals("Result History", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    DataToExport = (List<QueryInterface>) ResultDataGrid.ItemsSource
-                };
-                expExlSum.GenerateExcel();
+                    var expExlSum = new ExportToExcel<ResultHistorySummary >
+                    {
+                        DataToExport = (List<ResultHistorySummary>)ResultDataGrid.ItemsSource
+                    };
+                    expExlSum.GenerateExcel();
+                }
+                else
+                {
+                    var expExlSum = new ExportToExcel<QueryInterface>
+                    {
+                        DataToExport = (List<QueryInterface>) ResultDataGrid.ItemsSource
+                    };
+                    expExlSum.GenerateExcel();
+                }
             }
             catch (Exception exp)
             {

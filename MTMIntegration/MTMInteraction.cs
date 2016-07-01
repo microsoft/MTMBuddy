@@ -42,6 +42,8 @@ namespace MTMIntegration
         /// </summary>
         private static WorkItemStore _tfsStore;
       private const string TestSuiteQuery = "Select * from TestPoint where SuiteId in  ('[#testsuiteid#])";
+        const string TestPointQuery = "Select * from TestPoint where TestCaseId= '[#testcaseid#]'";
+        const string TestPointfromTcIds = "Select * from TestPoint where TestCaseId in ('[#testcaseid#])";
         /// <summary>
         /// Currently selected _testPlan
         /// </summary>
@@ -188,13 +190,13 @@ namespace MTMIntegration
         private static string FindSuiteAndGetAllChildSuites(int suiteid)
         {
             var suitelist = suiteid.ToString()+ "','";
-            IStaticTestSuite selectedSuite = null;
 
-           
+
             //Traverse the test suite tree to get the suite referenced by suiteId.
 
             foreach (var subsuite in _testPlan.RootSuite.SubSuites.Where(t => t.GetType().Name.Equals("StaticTestSuite")).Cast<IStaticTestSuite>())
             {
+                IStaticTestSuite selectedSuite;
                 if (subsuite.Id.Equals(suiteid))
                 {
                     selectedSuite = subsuite;
@@ -275,8 +277,9 @@ namespace MTMIntegration
         /// <param name="suiteId"></param>
         /// <param name="testResults"></param>
         /// <param name="suiteName">List of suiteids</param>
+        /// <param name="testFailures">List of failures</param>
         public static void GetResultDetails(int suiteId, ConcurrentBag<ResultSummary> testResults,
-            string suiteName )
+            string suiteName,ConcurrentBag<TestFailureDetail> testFailures )
         {
             Stp.Restart();
            
@@ -371,10 +374,9 @@ namespace MTMIntegration
 
                 try
                 {
-                    Stp.Restart();
+                   
                     res.Title = tpoint.TestCaseWorkItem.Title;
-                    Stp.Stop();
-                    TitleTime = TitleTime + (float) Stp.ElapsedMilliseconds/1000;
+                    
                 }
 
 
@@ -389,8 +391,39 @@ namespace MTMIntegration
                     res.Priority = tc.Priority;
                     Stp.Stop();
                     PriorityTime = PriorityTime + (float)Stp.ElapsedMilliseconds / 1000;
-
-                 
+                    Stp.Restart();
+                    //get failed steps details
+                    if (res.Outcome.Equals("Failed"))
+                    {
+                        foreach (ITestIterationResult ires in tpoint.MostRecentResult.Iterations)
+                        {
+                            foreach (ITestActionResult actresult in ires.Actions)
+                            {
+                                TestFailureDetail fdet = new TestFailureDetail
+                                {
+                                    TCId = res.TcId,
+                                    iterationid=ires.IterationId,
+                                    ActionId = actresult.ActionId,
+                                    ActionOutcome = actresult.Outcome.ToString(),
+                                   
+                                    
+                                };
+                                if (actresult is ITestStepResult)
+                                {
+                                    ITestStepResult stepres = actresult as ITestStepResult;
+                                    fdet.StepComment = stepres.ErrorMessage;
+                                    
+                                }
+                                foreach (ITestStep step in from action in tpoint.TestCaseWorkItem.Actions where action is ITestStep &&action.Id==actresult.ActionId select action as ITestStep)
+                                {
+                                    fdet.StepTitle = step.Title.ToPlainText();
+                                }
+                                testFailures.Add(fdet);
+                            }
+                        }
+                    }
+                    Stp.Stop();
+                    TitleTime = TitleTime + (float)Stp.ElapsedMilliseconds / 1000;
                 }
                 catch (Exception)
                 {
@@ -405,6 +438,8 @@ namespace MTMIntegration
         }
 
 
+
+       
         #endregion GetResultsData
 
         #region PlanDetails
@@ -447,7 +482,90 @@ namespace MTMIntegration
         #endregion PlanDetails
 
 
+        #region GetResultHistory
 
+        static public List<ResultHistorySummary> GetResultHistory(List<int> testCaseIds)
+        {
+            string tcidlist= testCaseIds.Aggregate("", (current, tcid) => current + tcid.ToString() + "','");
+            //convert list to comma separated string
+            tcidlist = tcidlist.Substring(0, tcidlist.Length - 2);
+
+            List<ResultHistorySummary> resulthistory = new List<ResultHistorySummary>();
+            Parallel.ForEach(PlanIdsDictionary, plan =>
+                //           foreach (KeyValuePair<int, string> plan in PlanIdsDictionary)
+            {
+                //Connect to the plan
+                ITestPlan testPlan = _teamProject.TestPlans.Find(plan.Key);
+
+                
+
+                //get matching testpoints
+                ITestPointCollection pointCollection =
+                    testPlan.QueryTestPoints(TestPointfromTcIds.Replace("[#testcaseid#]", tcidlist));
+                if (pointCollection.Count > 0)
+                {
+                    //populate suitedictionary
+                    Dictionary<int, string> historySuiteDictionary = GetSuiteDictionary(testPlan);
+
+                    resulthistory.AddRange(pointCollection.Select(tpoint => GetResultHistoryDetails(tpoint, plan.Value, historySuiteDictionary)));
+                }
+
+            }
+                );
+            return resulthistory;
+        }
+
+
+        static ResultHistorySummary GetResultHistoryDetails(ITestPoint tpoint,string planname,Dictionary<int,string> HistorySuiteDictionary)
+        {
+            ResultHistorySummary res = new ResultHistorySummary
+            {
+                PlanName = planname,
+                SuiteName = HistorySuiteDictionary[tpoint.SuiteId],
+                TcId = tpoint.TestCaseId,
+                AutomationStatus = tpoint.IsTestCaseAutomated,
+                Tester = tpoint.AssignedTo != null ? tpoint.AssignedTo.DisplayName : "Nobody",
+                Title = tpoint.TestCaseWorkItem.Title,
+                Priority = tpoint.TestCaseWorkItem.Priority
+            };
+           
+            if (tpoint.MostRecentResult == null)
+            {
+                res.Outcome = "Active";
+
+            }
+            else
+            {
+                ITestCaseResult tr = tpoint.MostRecentResult;
+                if (tr.State.Equals(TestResultState.InProgress))
+                    res.Outcome = "In progress";
+                else
+                {
+                    res.Outcome = tr.Outcome.ToString();
+                    if (res.Outcome.Equals("Unspecified", StringComparison.OrdinalIgnoreCase) ||
+                        res.Outcome.Equals("None", StringComparison.OrdinalIgnoreCase))
+                    {
+                        res.Outcome = "Active";
+                    }
+                }
+                res.Date = tr.LastUpdated;
+                res.RunBy = tr.RunByName;
+                res.Comment = tr.Comment + Environment.NewLine + "Configuration:" + tr.TestConfigurationName +
+                              Environment.NewLine + "Run Machine:" +
+                              tr.ComputerName;
+                //compute associated bugs
+                foreach (int bugid in tr.QueryAssociatedWorkItems())
+                {
+                    res.BugsAssociated = res.BugsAssociated + bugid.ToString() + ",";
+                }
+                if(!string.IsNullOrEmpty(res.BugsAssociated))
+                res.BugsAssociated= res.BugsAssociated.Substring(0, res.BugsAssociated.Length - 1);
+            }
+
+            return res;
+        }
+
+        #endregion GetResultHistory
 
 
 
@@ -540,6 +658,105 @@ namespace MTMIntegration
 
         #endregion TestCaseAssignment
 
+        #region BuildSuiteDictionary
+        /// <summary>
+        /// Returns the dictionary of suiteid and complete suite path for given plan
+        /// </summary>
+        /// <param name="testPlan">The plan for which suitedictionary has to be built</param>
+        /// <returns>Dictionary of Suiteid and complete suite path </returns>
+       
+        public static Dictionary<int,string> GetSuiteDictionary(ITestPlan testPlan)
+        {
+            Dictionary<int, string> retSuiteDictionary=new Dictionary<int, string>();
+           
+           
+
+            foreach (ITestSuiteBase t in testPlan.RootSuite.SubSuites)
+            {
+                if (t.GetType().Name.Equals("StaticTestSuite"))
+                {
+                    var suite = (IStaticTestSuite)t;
+                   
+
+
+                   
+                        retSuiteDictionary.Add(suite.Id, _testPlan.RootSuite.Title + "\\" + suite.Title);
+
+                    GetSubSuiteDictionary(suite, retSuiteDictionary, testPlan.RootSuite.Title + "\\");
+                    
+                }
+                else if (t.GetType().Name.Equals("DynamicTestSuite"))
+                {
+                    var suite = (IDynamicTestSuite)t;
+                    
+
+
+                    retSuiteDictionary.Add(suite.Id, _testPlan.RootSuite.Title + "\\" + suite.Title);
+                   
+                }
+
+                else if (t.GetType().Name.Equals("RequirementTestSuite"))
+                {
+                    var suite = (IRequirementTestSuite)t;
+
+                    retSuiteDictionary.Add(suite.Id, _testPlan.RootSuite.Title + "\\" + suite.Title);
+                    
+                }
+            }
+            return retSuiteDictionary;
+        }
+
+     /// <summary>
+     /// Updates the Subsuitedictionary for a givem suite
+     /// </summary>
+     /// <param name="suite">Static Test Suite to scan</param>
+     /// <param name="subSuiteDictionary">Dictionary of suiteids and path</param>
+     /// <param name="prefix">Parent path of the suite</param>
+        public static void GetSubSuiteDictionary(IStaticTestSuite suite, Dictionary<int,string> subSuiteDictionary , string prefix
+            )
+        {
+            foreach (ITestSuiteBase t in suite.SubSuites)
+            {
+                if (t.GetType().Name.Equals("StaticTestSuite"))
+                {
+                    var subsuite = (IStaticTestSuite)t;
+                    if (subsuite.SubSuites.Count > 0)
+                    {
+                       
+                            subSuiteDictionary.Add(subsuite.Id, prefix + "\\" + suite.Title + "\\" + subsuite.Title);
+
+                        GetSubSuiteDictionary(subsuite, subSuiteDictionary, prefix + "\\" + suite.Title);
+                        
+                    }
+                    else
+                    {
+
+                        subSuiteDictionary.Add(subsuite.Id, prefix + "\\" + suite.Title + "\\" + subsuite.Title);
+                       
+                    }
+                }
+                else if (t.GetType().Name.Equals("DynamicTestSuite"))
+                {
+                    var dynsuite = (IDynamicTestSuite)t;
+                   
+                        subSuiteDictionary.Add(dynsuite.Id, prefix + "\\" + suite.Title + "\\" + dynsuite.Title);
+                    
+                }
+
+                else if (t.GetType().Name.Equals("RequirementTestSuite"))
+                {
+                    var dynsuite = (IRequirementTestSuite)t;
+                  
+                        subSuiteDictionary.Add(dynsuite.Id, prefix + "\\" + suite.Title + "\\" + dynsuite.Title);
+                   
+                }
+            }
+        }
+
+
+        #endregion BuildSuiteDictionary
+
+
         #region wpftreelogic
 
         /// <summary>
@@ -599,7 +816,7 @@ namespace MTMIntegration
                     mtmtree.Items.Add(tvitem);
                 }
 
-                else
+                else if (t.GetType().Name.Equals("RequirementTestSuite"))
                 {
                     var suite = (IRequirementTestSuite) t;
                     var tvitem = new TreeViewItem {Header = suite.Title, Tag = suite.Id};
@@ -707,7 +924,7 @@ namespace MTMIntegration
             string result = "Passed",string planBuildNumber="",float duration=0 )
         {
 
-             const string testPointQuery = "Select * from TestPoint where TestCaseId= '[#testcaseid#]'";
+             
 
         const string testPointSuiteQuery =
             "Select * from TestPoint where TestCaseId= '[#testcaseid#]' and SuiteId = '[#testsuiteid#]'";
@@ -715,7 +932,7 @@ namespace MTMIntegration
        
    
             //Find all instances of the test case
-            var he = _testPlan.QueryTestPointHierarchy(testPointQuery.Replace("[#testcaseid#]", tcid));
+            var he = _testPlan.QueryTestPointHierarchy(TestPointQuery.Replace("[#testcaseid#]", tcid));
            
             if (he.Children.Count <= 0)
                 return "Testcase not found";
